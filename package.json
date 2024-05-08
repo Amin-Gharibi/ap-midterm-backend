@@ -1,0 +1,14 @@
+{
+  "name": "advanced-programming-midterm-backend",
+  "version": "1.0.0",
+  "description": "movie rating system backend",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "advanced-programming"
+  ],
+  "author": "Mohamad-Amin Gharibi",
+  "license": "ISC"
+}
