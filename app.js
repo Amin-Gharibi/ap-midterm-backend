@@ -8,6 +8,7 @@ const { errorHandler } = require("./middlewares/errors");
 //*routes import
 const authRoutes = require("./routes/auth");
 const castRoutes = require("./routes/castUser");
+const movieRoutes = require("./routes/movies");
 ///////////////
 
 const app = express();
@@ -34,6 +35,7 @@ app.use(express.static(path.join(__dirname, "public")));
 //* Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/cast", castRoutes)
+app.use("/api/movie", movieRoutes)
 ////////////
 
 //* Error Controller
