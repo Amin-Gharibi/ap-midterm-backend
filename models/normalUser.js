@@ -1,8 +1,8 @@
 const mongoose = require("mongoose")
 const { registerValidator, loginValidator } = require("../validators/auth")
-const { updateUserValidator, approveUserValidator, deleteUserValidator, getOneUserValidator } = require("../validators/user")
+const { updateUserValidator, approveUserValidator, deleteUserValidator, getOneUserValidator } = require("../validators/normalUser")
 
-const userSchema = new mongoose.Schema({
+const normalUserSchema = new mongoose.Schema({
         email: {
                 type: String,
                 required: false
@@ -19,34 +19,14 @@ const userSchema = new mongoose.Schema({
                 type: String,
                 default: "کاربر جدید"
         },
-        pictures: {
+        profilePic: {
                 type: String,
                 default: "default_prof_pic.png"
-        },
-        birthDate: {
-                type: Date,
-                required: false
-        },
-        birthCity: {
-                type: String,
-                required: false
         },
         role: {
                 type: String,
                 required: true,
-                enum: ['ADMIN', 'USER', 'CRITIC', 'CAST']
-        },
-        movieRole: {
-                type: String,
-                required: false
-        },
-        height: {
-                type: Number,
-                required: false
-        },
-        parentsName: {
-                type: String,
-                required: false
+                enum: ['ADMIN', 'USER', 'CRITIC']
         },
         isApproved: {
                 type: Boolean,
@@ -55,27 +35,27 @@ const userSchema = new mongoose.Schema({
 })
 
 // Auth
-userSchema.statics.registerValidation = function (body) {
+normalUserSchema.statics.registerValidation = function (body) {
         return registerValidator.validate(body, { abortEarly: false })
 }
-userSchema.statics.loginValidation = function (body) {
+normalUserSchema.statics.loginValidation = function (body) {
         return loginValidator.validate(body, { abortEarly: false })
 }
 
 // User
-userSchema.statics.updateUserValidation = function (body) {
+normalUserSchema.statics.updateUserValidation = function (body) {
         return updateUserValidator.validate(body, { abortEarly: false })
 }
-userSchema.statics.approveUserValidation = function (body) {
+normalUserSchema.statics.approveUserValidation = function (body) {
         return approveUserValidator.validate(body, { abortEarly: false })
 }
-userSchema.statics.deleteUserValidator = function (body) {
+normalUserSchema.statics.deleteUserValidator = function (body) {
         return deleteUserValidator.validate(body, { abortEarly: false })
 }
-userSchema.statics.getOneUserValidator = function (body) {
+normalUserSchema.statics.getOneUserValidator = function (body) {
         return getOneUserValidator.validate(body, { abortEarly: false })
 }
 
-const model = mongoose.model('User', userSchema)
+const model = mongoose.model('NormalUsers', normalUserSchema)
 
 module.exports = model

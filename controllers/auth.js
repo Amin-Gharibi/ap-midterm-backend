@@ -1,12 +1,12 @@
-const model = require("../models/user")
+const normalUserModel = require("../models/normalUser")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
 
 exports.register = async (req, res, next) => {
         try {
-                let { email, username, password, role } = await model.registerValidation(req.body)
+                let { email, username, password, role } = await normalUserModel.registerValidation(req.body)
 
-                const isUserExists = await userModel.findOne({
+                const isUserExists = await normalUserModel.findOne({
                         $or: [{ username }, { email }],
                 });
 
@@ -16,16 +16,16 @@ exports.register = async (req, res, next) => {
                         });
                 }
 
-                const countOfRegisteredUser = await userModel.count();
+                const countOfRegisteredUser = await normalUserModel.countDocuments();
 
-                password = await bcrypt.hash(password, 12)
+                const hashedPassword = await bcrypt.hash(password, 12)
 
-                const user = await userModel.create({
+                const user = await normalUserModel.create({
                         email,
                         username,
                         password: hashedPassword,
                         role: countOfRegisteredUser > 0 ? role : "ADMIN",
-                        isApproved: countOfRegisteredUser > 0 ? false : true
+                        isApproved: !countOfRegisteredUser
                 });
 
                 const userObject = user.toObject();
@@ -44,9 +44,9 @@ exports.register = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
         try {
-                const { identifier, password } = await model.loginValidation(req.body)
+                const { identifier, password } = await normalUserModel.loginValidation(req.body)
 
-                const user = await userModel.findOne({
+                const user = await normalUserModel.findOne({
                         $or: [{ email: identifier }, { username: identifier }],
                 });
 
@@ -62,7 +62,7 @@ exports.login = async (req, res, next) => {
                 }
 
                 const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-                        expiresIn: "5 day",
+                        expiresIn: "5 day"
                 });
 
                 return res.json({ accessToken });

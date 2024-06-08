@@ -2,9 +2,9 @@ const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
 
-module.exports.userPicturesStorage = multer.diskStorage({
+module.exports.userProfilePicturesStorage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		cb(null, path.join(__dirname, '..', 'public', 'usersPictures'));
+		cb(null, path.join(__dirname, '..', 'public', 'userProfilePictures'));
 	},
 	filename: (req, file, cb) => {
 		const sha256 = crypto.createHash('SHA256');

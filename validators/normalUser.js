@@ -14,20 +14,10 @@ const updateUserValidator = yup.object().shape({
                 .string()
                 .min(6, 'نام کامل شما باید حداقل 6 کاراکتر باشد')
                 .max(36, 'حداکثر تعداد کاراکتر نام شما 36 است'),
-        pictures: yup.array(),
-        birthDate: yup
-                .date()
-                .min(8, 'تاریخ تولد باید میلادی و با فرمت dd/mm/yyyy باشد')
-                .max(8, 'تاریخ تولد باید میلادی و با فرمت dd/mm/yyyy باشد'),
+        profilePic: yup.string(),
         role: yup
                 .string()
-                .oneOf(['ADMIN', 'USER', 'CRITIC'], 'کاربر فقط میتواند یکی از گزینه های ADMIN, USER, CRITIC باشد'),
-        height: yup
-                .number(),
-        parentsName: yup
-                .string()
-                .min(6, 'نام والدین باید حداقل 6 کاراکتر باشد')
-                .max(64, 'حداکثر تعداد کاراکتر نام والدین 64 است')
+                .oneOf(['ADMIN', 'USER', 'CRITIC'], 'کاربر فقط میتواند یکی از گزینه های ADMIN, USER, CRITIC باشد')
 })
 
 const approveUserValidator = yup.object().shape({
