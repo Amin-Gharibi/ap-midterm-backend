@@ -20,8 +20,16 @@ router
 	]), controller.create)
 
 router
-	.route('/approve/:id')
+	.route('/approve')
+	.get(controller.getAllApproved)
+
+router
+	.route('/status/:id')
 	.put(isAuth, isAdmin, controller.changeStatus)
+
+router
+	.route('/search')
+	.get(controller.searchHandler)
 
 router
 	.route('/:id')

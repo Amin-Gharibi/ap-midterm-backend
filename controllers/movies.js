@@ -1,6 +1,8 @@
 const moviesModel = require("../models/movies")
+const castModel = require("../models/castUser")
 const fs = require("fs")
 const path = require("path")
+const mongoose = require("mongoose");
 
 
 exports.create = async (req, res, next) => {
@@ -8,6 +10,14 @@ exports.create = async (req, res, next) => {
 		const body = await moviesModel.createValidation(req.body)
 		const medias = req.files.medias?.map(media => media.filename) ?? undefined
 		const cover = req.files.cover?.filename ?? undefined
+
+		for (const cast of body.cast) {
+			const isExist = await castModel.findById(new mongoose.Types.ObjectId(cast.castId))
+			if (!isExist) {
+				return res.status(400).json({message: "Cast Not Found!"})
+			}
+		}
+
 		const createdMovie = await moviesModel.create({
 			...body,
 			medias,
@@ -134,12 +144,52 @@ exports.changeStatus = async (req, res, next) => {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 
-		const updatedMovie = await moviesModel.findByIdAndUpdate(id,  {
+		const updatedMovie = await moviesModel.findByIdAndUpdate(id, {
 			isApproved: !targetMovie.isApproved
 		}, {new: true})
 
 		return res.status(200).json({message: "Movie Status Changed Successfully!", updatedMovie})
-	} catch (e) {n
+	} catch (e) {
+		n
+		next(e)
+	}
+}
+
+exports.getAllApproved = async (req, res, next) => {
+	try {
+		const approvedMovies = await moviesModel.find({isApproved: true})
+
+		return res.status(200).json({message: "Approved Movies Found Successfully!", approvedMovies})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.searchHandler = async (req, res, next) => {
+	try {
+		const {q} = await moviesModel.searchValidation(req.query)
+
+		let targetMovies = null
+
+		if (req.user?.role === 'ADMIN') {
+			targetMovies = await moviesModel.find({
+				$or: [
+					{ fullName: { $regex: q, $options: 'i' } },
+					{ summary: { $regex: q, $options: 'i' } }
+				]
+			})
+		} else {
+			targetMovies = await moviesModel.find({
+				$or: [
+					{ fullName: { $regex: q, $options: 'i' } },
+					{ summary: { $regex: q, $options: 'i' } }
+				],
+				isApproved: true
+			})
+		}
+
+		return res.status(200).json({message: "Search Result Found!", result: targetMovies})
+	} catch (e) {
 		next(e)
 	}
 }

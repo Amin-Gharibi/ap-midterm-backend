@@ -4,7 +4,7 @@ const {
 	updateValidator,
 	approveValidator,
 	deleteValidator,
-	getOneValidator
+	getOneValidator, searchValidator
 } = require("../validators/movie")
 
 const castUserSchema = new mongoose.Schema({
@@ -74,6 +74,9 @@ moviesSchema.statics.deleteValidation = function (body) {
 }
 moviesSchema.statics.getOneValidation = function (body) {
 	return getOneValidator.validate(body, {abortEarly: false})
+}
+moviesSchema.statics.searchValidation = function (body) {
+	return searchValidator.validate(body, {abortEarly: false})
 }
 
 const model = mongoose.model('Movies', moviesSchema)
