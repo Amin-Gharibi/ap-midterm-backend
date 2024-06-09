@@ -2,7 +2,7 @@ const express = require("express")
 const multer = require("multer")
 
 const multerStorage = require("../utils/multerStorage");
-const controller = require("../controllers/movies");
+const controller = require("../controllers/articles");
 const isAuth = require("../middlewares/isAuth");
 const isAdmin = require("../middlewares/isAdmin");
 
@@ -12,11 +12,10 @@ router
 	.route('/')
 	.get(controller.getAll)
 	.post(isAuth, isAdmin, multer({
-		storage: multerStorage.moviesPicturesStorage,
+		storage: multerStorage.articlesCoversStorage,
 		limits: {fileSize: 1000000000}
 	}).fields([
-		{name: "cover", maxCount: 1},
-		{name: "medias", maxCount: 10}
+		{name: "cover", maxCount: 1}
 	]), controller.create)
 
 router
@@ -33,14 +32,13 @@ router
 
 router
 	.route('/:id')
-	.get(controller.getOne)
+	.get(isAuth, controller.getOne)
 	.delete(isAuth, isAdmin, controller.delete)
 	.put(isAuth, isAdmin, multer({
-		storage: multerStorage.moviesPicturesStorage,
+		storage: multerStorage.articlesCoversStorage,
 		limits: {fileSize: 1000000000}
 	}).fields([
-		{name: "cover", maxCount: 1},
-		{name: "medias", maxCount: 10}
+		{name: "cover", maxCount: 1}
 	]), controller.update)
 
 module.exports = router

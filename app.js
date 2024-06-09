@@ -9,6 +9,7 @@ const { errorHandler } = require("./middlewares/errors");
 const authRoutes = require("./routes/auth");
 const castRoutes = require("./routes/castUser");
 const movieRoutes = require("./routes/movies");
+const articlesRoutes = require("./routes/articles");
 ///////////////
 
 const app = express();
@@ -36,6 +37,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/api/auth", authRoutes)
 app.use("/api/cast", castRoutes)
 app.use("/api/movie", movieRoutes)
+app.use("/api/article", articlesRoutes)
 ////////////
 
 //* Error Controller

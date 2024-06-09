@@ -26,7 +26,7 @@ module.exports.moviesPicturesStorage = multer.diskStorage({
 
 module.exports.articlesCoversStorage = multer.diskStorage({
 	destination: (req, file, cb) => {
-		cb(null, path.join(__dirname, '..', 'public', 'articlesCover'));
+		cb(null, path.join(__dirname, '..', 'public', 'articlesCovers'));
 	},
 	filename: (req, file, cb) => {
 		const sha256 = crypto.createHash('SHA256');

@@ -94,7 +94,7 @@ exports.delete = async (req, res, next) => {
 
 		const medias = targetMovie.medias.map(media => media.filename) ?? undefined;
 		const cover = targetMovie.cover?.filename ?? undefined
-		console.log(medias)
+
 		medias.forEach(media => {
 			media && fs.unlink(path.join(__dirname, '../public/moviesPictures', media), err => {
 				if (err) console.log(err)
@@ -107,7 +107,7 @@ exports.delete = async (req, res, next) => {
 
 		await moviesModel.findByIdAndDelete(id)
 
-		return res.status(200).json({message: "Movie Delete Successfully!"})
+		return res.status(200).json({message: "Movie Deleted Successfully!"})
 	} catch (e) {
 		next(e)
 	}
@@ -127,7 +127,7 @@ exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await moviesModel.getOneValidation(req.params)
 		const targetMovie = await moviesModel.findById(id)
-		if (!targetMovie) {
+		if (!targetMovie || (!targetMovie.isApproved && req.user?.role !== 'ADMIN')) {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 		return res.status(200).json({message: "target movie received successfully", targetMovie})
