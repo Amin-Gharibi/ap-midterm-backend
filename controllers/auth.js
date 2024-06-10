@@ -80,7 +80,7 @@ exports.registerValidateOtp = async (req, res, next) => {
 
 exports.register = async (req, res, next) => {
 	try {
-		let {email, username, password, role} = await normalUserModel.registerValidation(req.body)
+		let {email, username, password, role, fullName} = await normalUserModel.registerValidation(req.body)
 
 		const isUserExists = await normalUserModel.findOne({
 			$or: [{username}, {email}],
@@ -97,6 +97,7 @@ exports.register = async (req, res, next) => {
 		const hashedPassword = await bcrypt.hash(password, 12)
 
 		const user = await normalUserModel.create({
+			fullName,
 			email,
 			username,
 			password: hashedPassword,
@@ -112,7 +113,7 @@ exports.register = async (req, res, next) => {
 			expiresIn: "5 day",
 		});
 
-		return res.status(201).json({user: userObject, accessToken});
+		return res.status(201).json({user: userObject, accessToken, message: "Registered Successfully!"});
 	} catch (e) {
 		next(e)
 	}
@@ -180,7 +181,7 @@ exports.loginValidationOtp = async (req, res, next) => {
 
 		await otpModel.deleteOne({_id: isValidOtp._id});
 
-		return await exports.login(req, res, next, validUser._id)
+		return await exports.login(req, res, next, validUser.user._id)
 	} catch (e) {
 		next(e)
 	}
@@ -192,8 +193,7 @@ exports.login = async (req, res, next, userId) => {
 			expiresIn: "5 day"
 		});
 
-		return res.json({accessToken});
-
+		return res.status(200).json({accessToken, message: "Logged In Successfully!"});
 	} catch (e) {
 		next(e)
 	}
@@ -201,8 +201,8 @@ exports.login = async (req, res, next, userId) => {
 
 exports.getMe = async (req, res, next) => {
 	try {
-		// logic will be written soon
-		return res.status(200).json({message: "this api has not been completed...!"})
+		delete req.user.password;
+		return res.status(200).json({user: req.user});
 	} catch (e) {
 		next(e)
 	}

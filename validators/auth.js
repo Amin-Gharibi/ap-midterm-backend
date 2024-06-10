@@ -2,31 +2,36 @@ const yup = require("yup")
 
 
 const registerValidator = yup.object().shape({
+        fullName: yup
+            .string()
+            .required("Entering Your Full Name Is Required!")
+            .min(4, 'Full Name Must Be Longer Than 4 Characters')
+            .max(36, 'Full Name Must Be Shorter Than 36 Characters'),
         email: yup
                 .string()
-                .required("وارد کردن ایمیل الزامی است")
-                .matches(/^[a-zA-Z].{3,}@[a-zA-Z]{4,}\.[a-zA-Z]{2,}$/, 'ایمیل وارد شده معتبر نیست'),
+                .required("Entering Your Email Address Is Required!")
+                .matches(/^[a-zA-Z].{3,}@[a-zA-Z]{4,}\.[a-zA-Z]{2,}$/, 'Entered Email Address Is Not Valid'),
         username: yup
                 .string()
-                .required("وارد کردن نام کاربری الزامی است")
-                .matches(/^[a-zA-Z][\w]{5,}$/, 'نام کاربری وارد شده معتبر نیست'),
+                .required("Entering Username Is Required!")
+                .matches(/^[a-zA-Z]\w{5,}$/, 'Entered Username Is Not Valid!'),
         password: yup
                 .string()
-                .required("وارد کردن رمز عبور الزامی است")
-                .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'رمز عبور معتبر نیست، رمز عبور باید حداقل 8 کاراکتر شامل حروف کوچک، بزرگ و اعداد باشد'),
+                .required("Entering Password Is Required")
+                .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'Entered Password Is Not Valid! Password must be longer than 8 characters and must include Upper and Lowercase letters and numbers'),
         role: yup
                 .string()
-                .required("باید برای خود نقشی انتخاب کنید")
-                .oneOf(['ADMIN', 'USER', 'CRITIC'], 'نقش شما فقط میتواند ادمین، کاربر یا منتقد باشد')
+                .required("You Need To Choose A Role For Yourself In This Platform")
+                .oneOf(['USER', 'CRITIC'], 'Available Roles Are: User, Critic')
 })
 
 const loginValidator = yup.object().shape({
         identifier: yup
                 .string()
-                .required("وارد کردن نام کاربری یا ایمیل الزامی است"),
+                .required("Entering Email Or Username Is Required"),
         password: yup
                 .string()
-                .required("وارد کردن رمز عبور الزامی است")
+                .required("Entering Password Is Required")
 })
 
 

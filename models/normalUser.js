@@ -17,7 +17,7 @@ const normalUserSchema = new mongoose.Schema({
         },
         fullName: {
                 type: String,
-                default: "کاربر جدید"
+                default: "New User"
         },
         profilePic: {
                 type: String,
