@@ -1,82 +1,209 @@
 const normalUserModel = require("../models/normalUser")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer")
+const otpModel = require("../models/otp")
 
-exports.register = async (req, res, next) => {
-        try {
-                let { email, username, password, role } = await normalUserModel.registerValidation(req.body)
+async function sendOtpEmail(email, code) {
+	const transporter = nodemailer.createTransport({
+		service: process.env.OTP_SENDER_SERVICE,
+		auth: {
+			user: process.env.OTP_SENDER_EMAIL,
+			pass: process.env.OTP_SENDER_PASSWORD
+		}
+	});
 
-                const isUserExists = await normalUserModel.findOne({
-                        $or: [{ username }, { email }],
-                });
+	const mailOptions = {
+		from: 'gharibi8364@gmail.com',
+		to: email,
+		subject: 'IMDB M.M. OTP Code',
+		html: `
+            <div>
+                <h1 style="text-align: center;">IMDB M.M. OTP CODE</h1>
+                <h2 style="text-align: start;">Welcome to IMDB M.M. :)</h2>
+                <h3 style="text-align: center; font-weight: bold;">Here is Your OTP: ${code}</h3>
+            </div>
+        `
+	};
 
-                if (isUserExists) {
-                        return res.status(409).json({
-                                message: "username or email already exists",
-                        });
-                }
-
-                const countOfRegisteredUser = await normalUserModel.countDocuments();
-
-                const hashedPassword = await bcrypt.hash(password, 12)
-
-                const user = await normalUserModel.create({
-                        email,
-                        username,
-                        password: hashedPassword,
-                        role: countOfRegisteredUser > 0 ? role : "ADMIN",
-                        isApproved: !countOfRegisteredUser
-                });
-
-                const userObject = user.toObject();
-
-                Reflect.deleteProperty(userObject, "password");
-
-                const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-                        expiresIn: "5 day",
-                });
-
-                return res.status(201).json({ user: userObject, accessToken });
-        } catch (e) {
-                next(e)
-        }
+	return transporter.sendMail(mailOptions);
 }
 
-exports.login = async (req, res, next) => {
-        try {
-                const { identifier, password } = await normalUserModel.loginValidation(req.body)
+exports.initialRegister = async (req, res, next) => {
+	try {
+		const {email, username} = await normalUserModel.registerValidation(req.body);
 
-                const user = await normalUserModel.findOne({
-                        $or: [{ email: identifier }, { username: identifier }],
-                });
+		const isUserExists = await normalUserModel.findOne({$or: [{username}, {email}]});
 
-                if (!user) {
-                        return res
-                                .status(401)
-                                .json("there is no user with this email or username");
-                }
+		if (isUserExists) {
+			return res.status(409).json({message: "username or email already exists"});
+		}
 
-                const isPasswordValid = await bcrypt.compare(password, user.password);
-                if (!isPasswordValid) {
-                        return res.status(401).json({ message: "password is not correct" });
-                }
+		const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-                const accessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-                        expiresIn: "5 day"
-                });
+		await otpModel.findOneAndDelete({userId: `${email}${username}`});
 
-                return res.json({ accessToken });
+		await otpModel.create({code, userId: `${email}${username}`});
 
-        } catch (e) {
-                next(e)
-        }
+		try {
+			await sendOtpEmail(email, code);
+			return res.status(200).json({message: `OTP Code Was Sent To ${email}`});
+		} catch (error) {
+			console.error(error);
+			return res.status(500).json({message: 'Failed to send OTP'});
+		}
+
+	} catch (error) {
+		next(error);
+	}
+};
+
+exports.registerValidateOtp = async (req, res, next) => {
+	try {
+		const {code} = req.body
+		const {email, username} = await normalUserModel.registerValidation(req.body)
+
+		const isValidOtp = await otpModel.findOne({code, userId: `${email}${username}`})
+
+		if (!isValidOtp) {
+			return res.status(401).json({message: "OTP Verification Code is not Valid"})
+		}
+
+		await otpModel.deleteOne({_id: isValidOtp._id});
+
+		return await exports.register(req, res, next)
+	} catch (e) {
+		next(e)
+	}
+
+}
+
+exports.register = async (req, res, next) => {
+	try {
+		let {email, username, password, role} = await normalUserModel.registerValidation(req.body)
+
+		const isUserExists = await normalUserModel.findOne({
+			$or: [{username}, {email}],
+		});
+
+		if (isUserExists) {
+			return res.status(409).json({
+				message: "username or email already exists",
+			});
+		}
+
+		const countOfRegisteredUser = await normalUserModel.countDocuments();
+
+		const hashedPassword = await bcrypt.hash(password, 12)
+
+		const user = await normalUserModel.create({
+			email,
+			username,
+			password: hashedPassword,
+			role: countOfRegisteredUser > 0 ? role : "ADMIN",
+			isApproved: !countOfRegisteredUser
+		});
+
+		const userObject = user.toObject();
+
+		Reflect.deleteProperty(userObject, "password");
+
+		const accessToken = jwt.sign({id: user._id}, process.env.JWT_SECRET, {
+			expiresIn: "5 day",
+		});
+
+		return res.status(201).json({user: userObject, accessToken});
+	} catch (e) {
+		next(e)
+	}
+}
+
+async function loginValidating(data) {
+	const {identifier, password} = await normalUserModel.loginValidation(data);
+
+	const user = await normalUserModel.findOne({
+		$or: [{email: identifier}, {username: identifier}],
+	});
+
+	if (!user) {
+		return {message: "there is no user with this email or username"};
+	}
+
+	const isPasswordValid = await bcrypt.compare(password, user.password);
+	if (!isPasswordValid) {
+		return {message: "password is not correct"};
+	}
+
+	return {user}
+}
+
+exports.initialLogin = async (req, res, next) => {
+	try {
+		const validUser = await loginValidating(req.body)
+
+		if (validUser.message) {
+			return res.status(401).json({message: validUser.message})
+		}
+
+		const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+		await otpModel.findOneAndDelete({userId: validUser.user._id});
+
+		await otpModel.create({code, userId: validUser.user._id});
+
+		try {
+			await sendOtpEmail(validUser.user.email, code);
+			return res.status(200).json({message: `OTP Code Was Sent To Your Email Address`});
+		} catch (error) {
+			console.error(error);
+			return res.status(500).json({message: 'Failed to send OTP'});
+		}
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.loginValidationOtp = async (req, res, next) => {
+	try {
+		const {code} = req.body
+		const validUser = await loginValidating(req.body)
+
+		if (validUser.message) {
+			return res.status(401).json({message: validUser.message})
+		}
+
+		const isValidOtp = await otpModel.findOne({code, userId: validUser.user._id})
+
+		if (!isValidOtp) {
+			return res.status(401).json({message: "OTP Verification Code is not Valid"})
+		}
+
+		await otpModel.deleteOne({_id: isValidOtp._id});
+
+		return await exports.login(req, res, next, validUser._id)
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.login = async (req, res, next, userId) => {
+	try {
+		const accessToken = jwt.sign({id: userId}, process.env.JWT_SECRET, {
+			expiresIn: "5 day"
+		});
+
+		return res.json({accessToken});
+
+	} catch (e) {
+		next(e)
+	}
 }
 
 exports.getMe = async (req, res, next) => {
-        try {
-                // logic will be written soon
-                return res.status(200).json({message: "this api has not been completed...!"})
-        } catch (e) {
-                next(e)
-        }
+	try {
+		// logic will be written soon
+		return res.status(200).json({message: "this api has not been completed...!"})
+	} catch (e) {
+		next(e)
+	}
 }
