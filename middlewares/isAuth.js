@@ -20,6 +20,9 @@ module.exports = async (req, res, next) => {
 		if (!user) {
 			return res.status(404).json({message: "User Not Found"});
 		}
+		if (!user.isApproved) {
+			return res.status(401).json({message: "Your Account Hasn't Been Approved Yet! Please Try Again Later!"})
+		}
 		Reflect.deleteProperty(user, "password");
 
 		req.user = user;

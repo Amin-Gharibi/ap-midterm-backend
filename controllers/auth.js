@@ -1,33 +1,17 @@
 const normalUserModel = require("../models/normalUser")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer")
 const otpModel = require("../models/otp")
+const emailSender = require("../utils/emailSender")
 
-async function sendOtpEmail(email, code) {
-	const transporter = nodemailer.createTransport({
-		service: process.env.OTP_SENDER_SERVICE,
-		auth: {
-			user: process.env.OTP_SENDER_EMAIL,
-			pass: process.env.OTP_SENDER_PASSWORD
-		}
-	});
-
-	const mailOptions = {
-		from: 'gharibi8364@gmail.com',
-		to: email,
-		subject: 'IMDB M.M. OTP Code',
-		html: `
+const otpEmailTemplate = code => (`
             <div>
                 <h1 style="text-align: center;">IMDB M.M. OTP CODE</h1>
                 <h2 style="text-align: start;">Welcome to IMDB M.M. :)</h2>
                 <h3 style="text-align: center; font-weight: bold;">Here is Your OTP: ${code}</h3>
             </div>
-        `
-	};
-
-	return transporter.sendMail(mailOptions);
-}
+        `)
+const otpEmailSubject = 'IMDB M.M. OTP Code'
 
 exports.initialRegister = async (req, res, next) => {
 	try {
@@ -46,7 +30,7 @@ exports.initialRegister = async (req, res, next) => {
 		await otpModel.create({code, userId: `${email}${username}`});
 
 		try {
-			await sendOtpEmail(email, code);
+			await emailSender(email, otpEmailSubject, otpEmailTemplate(code));
 			return res.status(200).json({message: `OTP Code Was Sent To ${email}`});
 		} catch (error) {
 			console.error(error);
@@ -153,7 +137,7 @@ exports.initialLogin = async (req, res, next) => {
 		await otpModel.create({code, userId: validUser.user._id});
 
 		try {
-			await sendOtpEmail(validUser.user.email, code);
+			await emailSender(validUser.user.email, otpEmailSubject, otpEmailTemplate(code));
 			return res.status(200).json({message: `OTP Code Was Sent To Your Email Address`});
 		} catch (error) {
 			console.error(error);
@@ -202,6 +186,7 @@ exports.login = async (req, res, next, userId) => {
 exports.getMe = async (req, res, next) => {
 	try {
 		delete req.user.password;
+		req.user.profilePic = `${req.protocol}://${req.get('host')}/usersProfilePictures/${req.user.profilePic}`
 		return res.status(200).json({user: req.user});
 	} catch (e) {
 		next(e)

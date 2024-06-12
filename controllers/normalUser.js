@@ -3,7 +3,17 @@ const bcrypt = require("bcrypt")
 const banUsersModel = require("../models/banUsers")
 const fs = require("fs")
 const path = require("path")
+const emailSender = require("../utils/emailSender")
 
+const approveEmailSubject = 'Congratulations! You Are Now In IMDB M.M.'
+const approveEmailTemplate = (fullName) => (`
+<div>
+	<h1 style="text-align: center;">Congratulations Dear ${fullName}</h1>
+	<p style="text-align: start;">Dear ${fullName}, Your Account has been approved by the administration and now you can easily login to your account using the credentials you entered while signing up!</p>
+	<h5 style="text-align: start;">Feel free to share your thoughts with administration :) ❤️</h5>
+	<h4 style="text-align: center;">IMDB M.M.</h4>
+</div>
+`)
 
 exports.update = async (req, res, next) => {
 	try {
@@ -16,9 +26,9 @@ exports.update = async (req, res, next) => {
 			updatingPassword
 		} = await normalUserModel.updateValidation({...req.body, ...req.params})
 
-		const profilePic = req.files.profilePic[0]?.filename ?? undefined
+		const profilePic = req.files?.profilePic[0]?.filename ?? undefined
 
- 		const targetUser = await normalUserModel.findById(id)
+		const targetUser = await normalUserModel.findById(id)
 
 		if (!targetUser) {
 			return res.status(404).json({message: "User Not Found!"})
@@ -30,26 +40,30 @@ exports.update = async (req, res, next) => {
 			})
 		}
 
-		let updatedUser = await normalUserModel.findByIdAndUpdate(id,  {
-			email,
-			username,
-			fullName,
-			profilePic
+		let updatedUser = await normalUserModel.findByIdAndUpdate(id, {
+			email: email ?? undefined,
+			username: username ?? undefined,
+			fullName: fullName ?? undefined,
+			profilePic: profilePic ?? undefined
 		}, {new: true}).select('-password')
 
 		if (currentPassword && updatingPassword) {
-			if (req.user.role !== 'ADMIN') {
-				if (!bcrypt.compare(currentPassword, targetUser.password)) {
+			if (req.user.role !== 'ADMIN' && !req.user._id.equals(id)) {
+				return res.status(401).json({message: "You Are Not Authorized!"})
+			} else if (req.user.role !== 'ADMIN' && req.user._id.equals(id)) {
+				if (!(await bcrypt.compare(currentPassword, targetUser.password))) {
 					return res.status(401).json({message: "Entered Current Password is not correct!"})
 				}
 			}
 
-			updatedUser = await normalUserModel.findByIdAndUpdate(id,  {
-				password: updatingPassword
+			updatedUser = await normalUserModel.findByIdAndUpdate(id, {
+				password: await bcrypt.hash(updatingPassword, 12)
 			}, {new: true}).select('-password')
 		}
 
-		return res.status(200).json({message: "User Updated Successfully!", updatedUser})
+		updatedUser.profilePic = `${req.protocol}://${req.get('host')}/usersProfilePictures/${updatedUser.profilePic}`
+
+		return res.status(200).json({message: "Details Updated Successfully!", updatedUser})
 	} catch (e) {
 		next(e)
 	}
@@ -59,9 +73,11 @@ exports.approve = async (req, res, next) => {
 	try {
 		const {id} = await normalUserModel.approveValidation(req.params)
 
-		await normalUserModel.findByIdAndUpdate(id,  {
+		const user = await normalUserModel.findByIdAndUpdate(id, {
 			isApproved: true
-		})
+		}, {new: true})
+
+		await emailSender(user.email,approveEmailSubject, approveEmailTemplate(user.fullName))
 
 		return res.status(200).json({message: "User Was Approved Successfully!"})
 	} catch (e) {
@@ -97,7 +113,7 @@ exports.changeRole = async (req, res, next) => {
 	try {
 		const {id, role} = await normalUserModel.changeRoleValidation({...req.params, ...req.body})
 
-		await normalUserModel.findByIdAndUpdate(id,  {
+		await normalUserModel.findByIdAndUpdate(id, {
 			role
 		})
 
