@@ -9,7 +9,15 @@ const router = express.Router();
 router
 	.route('/')
 	.get(isAuth, isAdmin, controller.getWaitListComments)
-	.post(isAuth, isAdmin, controller.create)
+	.post(isAuth, controller.create)
+
+router
+	.route('/page/:id')
+	.get(controller.getPageComments)
+
+router
+	.route('/me')
+	.get(isAuth, controller.getMyComments)
 
 router
 	.route('/approve/:id')

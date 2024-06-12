@@ -25,7 +25,8 @@ const articleSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false
 	}
-})
+},
+	{timestamps: true})
 
 articleSchema.statics.createValidation = function (body) {
 	return createValidator.validate(body, {abortEarly: false})

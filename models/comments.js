@@ -8,6 +8,10 @@ const commentsSchema = new mongoose.Schema({
 	body: {
 		type: String
 	},
+	user: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref: 'NormalUsers'
+	},
 	page: {
 		type: mongoose.Schema.Types.ObjectId,
 		refPath: 'pageModel'
@@ -15,7 +19,11 @@ const commentsSchema = new mongoose.Schema({
 	pageModel: {
 		type: String,
 		required: true,
-		enum: ['Movies', 'Articles']
+		enum: ['Movies', 'Articles', 'CastUsers']
+	},
+	rate: {
+		type: Number,
+		required: false
 	},
 	likes: {
 		type: [new mongoose.Schema({
@@ -41,7 +49,8 @@ const commentsSchema = new mongoose.Schema({
 		type: mongoose.Types.ObjectId,
 		ref: 'Comments'
 	}
-});
+},
+	{timestamps: true});
 
 
 commentsSchema.statics.createValidation = function (body) {
@@ -63,6 +72,9 @@ commentsSchema.statics.likeValidation = function (body) {
 	return idValidator.validate(body, {abortEarly: false})
 }
 commentsSchema.statics.disLikeValidation = function (body) {
+	return idValidator.validate(body, {abortEarly: false})
+}
+commentsSchema.statics.getPageCommentsValidation = function (body) {
 	return idValidator.validate(body, {abortEarly: false})
 }
 
