@@ -11,7 +11,8 @@ const castRoutes = require("./routes/castUser");
 const movieRoutes = require("./routes/movies");
 const articlesRoutes = require("./routes/articles");
 const commentRoutes = require("./routes/comments");
-///////////////
+const normalUsersRoutes = require("./routes/normalUser");
+
 
 const app = express();
 
@@ -40,7 +41,8 @@ app.use("/api/cast", castRoutes)
 app.use("/api/movie", movieRoutes)
 app.use("/api/article", articlesRoutes)
 app.use("/api/comment", commentRoutes)
-////////////
+app.use("/api/user", normalUsersRoutes)
+
 
 //* Error Controller
 app.use((req, res) => {

@@ -1,50 +1,48 @@
 const yup = require("yup")
 
 const updateUserValidator = yup.object().shape({
+        id: yup
+            .string()
+            .required("User id is required")
+            .matches(/^[0-9a-fA-F]{24}$/, "User id is not valid"),
         email: yup
                 .string()
-                .matches(/^[a-zA-Z].{3,}@[a-zA-Z]{4,}\.[a-zA-Z]{2,}$/, 'ایمیل وارد شده معتبر نیست'),
+                .matches(/^[a-zA-Z].{3,}@[a-zA-Z]{4,}\.[a-zA-Z]{2,}$/, 'Entered Email is not valid!'),
         username: yup
                 .string()
-                .matches(/^[a-zA-Z][\w]{5,}$/, 'نام کاربری وارد شده معتبر نیست'),
-        password: yup
+                .matches(/^[a-zA-Z][\w]{5,}$/, 'Entered Username is not valid'),
+        currentPassword: yup
+            .string(),
+        updatingPassword: yup
                 .string()
-                .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'رمز عبور معتبر نیست، رمز عبور باید حداقل 8 کاراکتر شامل حروف کوچک، بزرگ و اعداد باشد'),
+                .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/, 'New Password is not valid, password must contain at least 8 characters including upper and lower letters and numbers'),
         fullName: yup
                 .string()
-                .min(4, 'نام کامل شما باید حداقل 4 کاراکتر باشد')
-                .max(36, 'حداکثر تعداد کاراکتر نام شما 36 است'),
-        profilePic: yup.string(),
+                .min(4, 'Name must be longer than 4 chars')
+                .max(36, 'Name must be shorter than 36 chars')
+})
+
+const idValidator = yup.object().shape({
+        id: yup
+                .string()
+                .required("User id is required")
+                .matches(/^[0-9a-fA-F]{24}$/, "User id is not valid")
+})
+
+const changeRoleValidator = yup.object().shape({
+        id: yup
+            .string()
+            .required("User id is required")
+            .matches(/^[0-9a-fA-F]{24}$/, "User id is not valid"),
         role: yup
-                .string()
-                .oneOf(['ADMIN', 'USER', 'CRITIC'], 'کاربر فقط میتواند یکی از گزینه های ADMIN, USER, CRITIC باشد')
-})
-
-const approveUserValidator = yup.object().shape({
-        id: yup
-                .string()
-                .required("شناسه کاربر الزامی است")
-                .matches(/^[0-9a-fA-F]{24}$/, "شناسه معتبر نیست")
-})
-
-const deleteUserValidator = yup.object().shape({
-        id: yup
-                .string()
-                .required("شناسه کاربر الزامی است")
-                .matches(/^[0-9a-fA-F]{24}$/, "شناسه معتبر نیست")
-})
-
-const getOneUserValidator = yup.object().shape({
-        id: yup
-                .string()
-                .required("شناسه کاربر الزامی است")
-                .matches(/^[0-9a-fA-F]{24}$/, "شناسه معتبر نیست")
+            .string()
+            .required("Must Enter New Role!")
+            .oneOf(['ADMIN', 'CRITIC', 'USER'], 'Role can be one of ADMIN, CRITIC, USER')
 })
 
 
 module.exports = {
         updateUserValidator,
-        approveUserValidator,
-        deleteUserValidator,
-        getOneUserValidator
+        idValidator,
+        changeRoleValidator
 }

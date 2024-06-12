@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../models/normalUser");
+const normalUserModel = require("../models/normalUser");
+const banUsersModel = require("../models/banUsers")
 
 module.exports = async (req, res, next) => {
 	const authorizationHeader = req.header("Authorization")?.split(" ");
@@ -15,13 +16,18 @@ module.exports = async (req, res, next) => {
 	try {
 		const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-		const user = await userModel.findById(decoded.id).lean();
+		const user = await normalUserModel.findById(decoded.id).lean();
 		if (!user) {
-			return res.status(404).json({ message: "User Not Found" });
+			return res.status(404).json({message: "User Not Found"});
 		}
 		Reflect.deleteProperty(user, "password");
 
 		req.user = user;
+
+		const isBanned = await banUsersModel.findOne({email: user.email})
+		if (isBanned) {
+			return res.status(401).json({message: "You Have Been Banned! Please Contact Administration!"})
+		}
 
 		next();
 	} catch (error) {
