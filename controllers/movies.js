@@ -9,7 +9,7 @@ exports.create = async (req, res, next) => {
 	try {
 		const body = await moviesModel.createValidation(req.body)
 		const medias = req.files.medias?.map(media => media.filename) ?? undefined
-		const cover = req.files.cover?.filename ?? undefined
+		const cover = req.files.cover[0]?.filename ?? undefined
 
 		for (const cast of body.cast) {
 			const isExist = await castModel.findById(new mongoose.Types.ObjectId(cast.castId))
@@ -49,7 +49,7 @@ exports.update = async (req, res, next) => {
 		}
 
 		const medias = req.files.medias?.map(media => media.filename) ?? undefined;
-		const cover = req.files.cover?.filename ?? undefined
+		const cover = req.files.cover[0]?.filename ?? undefined
 
 		if (medias !== targetMovie.medias) {
 			medias.forEach(media => {
@@ -92,8 +92,8 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 
-		const medias = targetMovie.medias.map(media => media.filename) ?? undefined;
-		const cover = targetMovie.cover?.filename ?? undefined
+		const medias = targetMovie.medias.map(media => media) ?? undefined;
+		const cover = targetMovie.cover ?? undefined
 
 		medias.forEach(media => {
 			media && fs.unlink(path.join(__dirname, '../public/moviesPictures', media), err => {
