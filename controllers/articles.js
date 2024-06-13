@@ -5,8 +5,9 @@ const path = require("path")
 
 exports.create = async (req, res, next) => {
 	try {
+		console.log({...req.body})
 		const body = await articlesModel.createValidation({writer: req.user._id, ...req.body})
-		const cover = req.files.cover[0]?.filename ?? undefined
+		const cover = req.files?.cover[0]?.filename ?? undefined
 
 		const createdArticle = await articlesModel.create({
 			...body,
@@ -61,6 +62,10 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "Article Not Found!"})
 		}
 
+		if (req.user.role !== 'ADMIN' && !req.user._id.equals(targetArticle.writer)) {
+			return res.status(401).json({message: "There is not Article For You With This ID"})
+		}
+
 		const cover = targetArticle.cover?.filename ?? undefined
 
 		cover && fs.unlink(path.join(__dirname, '../public/articlesCovers', cover), err => {
@@ -89,7 +94,7 @@ exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await articlesModel.getOneValidation(req.params)
 		const targetArticle = await articlesModel.findById(id)
-		if (!targetArticle || (!targetArticle.isApproved && req.user?.role !== 'ADMIN')) {
+		if (!targetArticle || (!targetArticle.isPublished && req.user?.role !== 'ADMIN')) {
 			return res.status(404).json({message: "Article Not Found!"})
 		}
 		return res.status(200).json({message: "target article received successfully", targetArticle})
@@ -100,28 +105,31 @@ exports.getOne = async (req, res, next) => {
 
 exports.changeStatus = async (req, res, next) => {
 	try {
-		const {id} = await articlesModel.approveValidation(req.params)
+		const {id} = await articlesModel.publishValidation(req.params)
 		const targetArticle = await articlesModel.findById(id)
 		if (!targetArticle) {
 			return res.status(404).json({message: "Article Not Found!"})
 		}
 
+		if (req.user.role !== 'ADMIN' && !req.user._id.equals(targetArticle.writer)) {
+			return res.status(401).json({message: "There is not Article For You With This ID"})
+		}
+
 		const updatedArticle = await articlesModel.findByIdAndUpdate(id, {
-			isApproved: !targetArticle.isApproved
+			isPublished: !targetArticle.isPublished
 		}, {new: true})
 
 		return res.status(200).json({message: "Article Status Changed Successfully!", updatedArticle})
 	} catch (e) {
-		n
 		next(e)
 	}
 }
 
-exports.getAllApproved = async (req, res, next) => {
+exports.getAllPublished = async (req, res, next) => {
 	try {
-		const approvedArticles = await articlesModel.find({isApproved: true})
+		const publishedArticles = await articlesModel.find({isPublished: true})
 
-		return res.status(200).json({message: "Approved Articles Found Successfully!", approvedArticles})
+		return res.status(200).json({message: "Published Articles Found Successfully!", publishedArticles})
 	} catch (e) {
 		next(e)
 	}
@@ -151,6 +159,16 @@ exports.searchHandler = async (req, res, next) => {
 		}
 
 		return res.status(200).json({message: "Search Result Found!", result: targetArticles})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.getMyComments = async (req, res, next) => {
+	try {
+		const userArticles = await articlesModel.find({writer: req.user._id})
+
+		return res.status(200).json({message: "User Articles Received Successfully!", userArticles})
 	} catch (e) {
 		next(e)
 	}

@@ -11,7 +11,7 @@ const router = express.Router();
 router
 	.route('/')
 	.get(controller.getAll)
-	.post(isAuth, isAdmin, multer({
+	.post(isAuth, multer({
 		storage: multerStorage.articlesCoversStorage,
 		limits: {fileSize: 1000000000}
 	}).fields([
@@ -19,12 +19,16 @@ router
 	]), controller.create)
 
 router
-	.route('/approve')
-	.get(controller.getAllApproved)
+	.route('/published')
+	.get(controller.getAllPublished)
+
+router
+	.route('/me')
+	.get(isAuth, controller.getMyComments)
 
 router
 	.route('/status/:id')
-	.put(isAuth, isAdmin, controller.changeStatus)
+	.put(isAuth, controller.changeStatus)
 
 router
 	.route('/search')
@@ -33,7 +37,7 @@ router
 router
 	.route('/:id')
 	.get(isAuth, controller.getOne)
-	.delete(isAuth, isAdmin, controller.delete)
+	.delete(isAuth, controller.delete)
 	.put(isAuth, isAdmin, multer({
 		storage: multerStorage.articlesCoversStorage,
 		limits: {fileSize: 1000000000}

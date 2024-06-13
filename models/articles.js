@@ -2,7 +2,7 @@ const mongoose = require("mongoose")
 const {
 	createValidator,
 	updateValidator,
-	approveValidator,
+	publishValidator,
 	deleteValidator,
 	getOneValidator, searchValidator
 } = require("../validators/articles")
@@ -21,9 +21,13 @@ const articleSchema = new mongoose.Schema({
 		type: mongoose.Types.ObjectId,
 		ref: 'NormalUsers'
 	},
-	isApproved: {
+	isPublished: {
 		type: Boolean,
 		default: false
+	},
+	rate: {
+		type: Number,
+		default: 0
 	}
 },
 	{timestamps: true})
@@ -34,8 +38,8 @@ articleSchema.statics.createValidation = function (body) {
 articleSchema.statics.updateValidation = function (body) {
 	return updateValidator.validate(body, {abortEarly: false})
 }
-articleSchema.statics.approveValidation = function (body) {
-	return approveValidator.validate(body, {abortEarly: false})
+articleSchema.statics.publishValidation = function (body) {
+	return publishValidator.validate(body, {abortEarly: false})
 }
 articleSchema.statics.deleteValidation = function (body) {
 	return deleteValidator.validate(body, {abortEarly: false})

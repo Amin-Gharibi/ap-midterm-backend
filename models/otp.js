@@ -9,7 +9,7 @@ const otpSchema = new mongoose.Schema({
 	},
 	createdAt: {
 		type: Date,
-		default: Date.now(),
+		default: Date.now,
 		expires: 180 // otp will be removed after 180 seconds
 	},
 	userId: {

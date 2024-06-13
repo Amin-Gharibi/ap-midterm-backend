@@ -1,5 +1,6 @@
 const favoriteMoviesModel = require("../models/favoriteMovies")
 const newLiner = require("../utils/newliner")
+const movieModel = require("../models/movies");
 
 exports.getAll = async (req, res, next) => {
 	try {
@@ -19,6 +20,12 @@ exports.getAll = async (req, res, next) => {
 exports.create = async (req, res, next) => {
 	try {
 		const {movie} = await favoriteMoviesModel.createValidation(req.body)
+
+		const targetMovie = await movieModel.findById(article)
+
+		if (!targetMovie || !targetMovie.isApproved){
+			return res.status(404).json({message: "No Movie Found"})
+		}
 
 		await favoriteMoviesModel.create({movie, user: req.user._id})
 

@@ -16,7 +16,9 @@ const createValidator = yup.object().shape({
 	writer: yup
 		.string()
 		.required("writer id is required")
-		.matches(/^[0-9a-fA-F]{24}$/, "writer id is not valid")
+		.matches(/^[0-9a-fA-F]{24}$/, "writer id is not valid"),
+	isPublished: yup
+		.bool()
 })
 
 const updateValidator = yup.object().shape({
@@ -54,7 +56,7 @@ const deleteValidator = yup.object().shape({
 		.matches(/^[0-9a-fA-F]{24}$/, "Article id is not valid")
 })
 
-const approveValidator = yup.object().shape({
+const publishValidator = yup.object().shape({
 	id: yup
 		.string()
 		.required("Article id is required")
@@ -71,6 +73,6 @@ module.exports = {
 	updateValidator,
 	getOneValidator,
 	deleteValidator,
-	approveValidator,
+	publishValidator,
 	searchValidator
 }
