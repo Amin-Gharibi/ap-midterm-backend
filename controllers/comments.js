@@ -2,12 +2,20 @@ const commentsModel = require("../models/comments")
 const moviesModel = require("../models/movies")
 const articlesModel = require("../models/articles")
 const castUsersModel = require("../models/castUser")
+const normalUsersModel = require("../models/normalUser")
 const newLiner = require("../utils/newliner")
 
 exports.create = async (req, res, next) => {
 	try {
 		const body = await commentsModel.createValidation(req.body)
 		body.body = newLiner(body.body, 150)
+
+		const isPageAvailable = (await moviesModel.findById(body.page)) || (await articlesModel.findById(body.page)) || (await castUsersModel.findById(body.page));
+
+		if (!isPageAvailable) {
+			return res.status(404).json({message: "Page Not Found!"})
+		}
+
 		const createdComment = await commentsModel.create({...body, user: req.user._id})
 
 		return res.status(201).json({message: "Comment Created Successfully!", createdComment})
@@ -163,7 +171,7 @@ exports.getOne = async (req, res, next) => {
 
 exports.getWaitListComments = async (req, res, next) => {
 	try {
-		const waitListComments = await commentsModel.find({isApproved: false})
+		const waitListComments = await commentsModel.find({isApproved: false}).populate('user page', '-password')
 
 		return res.status(200).json({message: "Wait list comments received successfully!", waitListComments})
 	} catch (e) {
