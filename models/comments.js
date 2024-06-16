@@ -47,7 +47,8 @@ const commentsSchema = new mongoose.Schema({
 	},
 	parentComment: {
 		type: mongoose.Types.ObjectId,
-		ref: 'Comments'
+		ref: 'Comments',
+		default: null
 	}
 },
 	{timestamps: true});

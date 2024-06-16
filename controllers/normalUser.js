@@ -4,6 +4,13 @@ const banUsersModel = require("../models/banUsers")
 const fs = require("fs")
 const path = require("path")
 const emailSender = require("../utils/emailSender")
+const articlesModel = require("../models/articles")
+const commentsModel = require("../models/comments")
+const favoriteArticlesModel = require("../models/favoriteArticles")
+const favoriteMoviesModel = require("../models/favoriteMovies")
+const castUserModel = require("../models/castUser")
+const moviesModel = require("../models/movies")
+
 
 const approveEmailSubject = 'Congratulations! You Are Now In IMDB M.M.'
 const approveEmailTemplate = (fullName) => (`
@@ -118,13 +125,29 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "User Not Found!"})
 		}
 
-		await normalUserModel.findByIdAndDelete(id)
+		const userComments = await commentsModel.find({user: id})
+		for (const comment of userComments) {
+			const targetPage = (await articlesModel.findById(comment.page)) || (await castUserModel.findById(comment.page)) || (await moviesModel.findById(comment.page))
+			const targetPageCommentsCounts = Array.from((await commentsModel.find({page: comment.page, parentComment: null}))).length
+			if (targetUser.role === 'CRITIC') {
+				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * comment.rate)) / (targetPageCommentsCounts - 1)
+			} else {
+				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - comment.rate) / (targetPageCommentsCounts - 1)
+			}
+			targetPage.save()
+			await commentsModel.findByIdAndDelete(comment._id)
+		}
 
 		if (targetUser.profilePic !== 'default_prof_pic.png') {
 			await fs.unlink(path.join(__dirname, "../public/usersProfilePictures", targetUser.profilePic), err => {
 				if (err) console.log(err)
 			})
 		}
+
+		await articlesModel.deleteMany({writer: id})
+		await favoriteArticlesModel.deleteMany({user: id})
+		await favoriteMoviesModel.deleteMany({user: id})
+		await normalUserModel.findByIdAndDelete(id)
 
 		return res.status(200).json({message: "User Deleted Successfully!"})
 	} catch (e) {

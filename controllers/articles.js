@@ -1,4 +1,5 @@
 const articlesModel = require("../models/articles")
+const favoriteArticlesModel = require("../models/favoriteArticles")
 const fs = require("fs")
 const path = require("path")
 
@@ -65,6 +66,8 @@ exports.delete = async (req, res, next) => {
 		if (req.user.role !== 'ADMIN' && !req.user._id.equals(targetArticle.writer)) {
 			return res.status(401).json({message: "There is not Article For You With This ID"})
 		}
+
+		await favoriteArticlesModel.deleteMany({article: targetArticle._id})
 
 		const cover = targetArticle.cover?.filename ?? undefined
 

@@ -32,21 +32,24 @@ exports.approve = async (req, res, next) => {
 			return res.status(404).json({message: "Comment Not Found!"})
 		}
 
-		const page = (await moviesModel.findById(targetComment.page)) || (await articlesModel.findById(targetComment.page)) || (await castUsersModel.findById(targetComment.page))
+		// if it has a parent then it's a reply and its rate is 0 by default
+		if (!targetComment.parentComment) {
+			const page = (await moviesModel.findById(targetComment.page)) || (await articlesModel.findById(targetComment.page)) || (await castUsersModel.findById(targetComment.page))
 
-		if (!page) {
-			return res.status(404).json({message: "No Page Found!"})
+			if (!page) {
+				return res.status(404).json({message: "No Page Found!"})
+			}
+
+			if (!page.rate) {
+				page.rate = targetComment.rate
+			} else if (req.user.role === 'CRITIC') {
+				page.rate = (page.rate + (2 * targetComment.rate)) / 2
+			} else {
+				page.rate = (page.rate + targetComment.rate) / 2
+			}
+
+			await page.save()
 		}
-
-		if (!page.rate) {
-			page.rate = targetComment.rate
-		} else if (req.user.role === 'CRITIC') {
-			page.rate = (page.rate + (1.5 * targetComment.rate)) / 2
-		} else {
-			page.rate = (page.rate + targetComment.rate) / 2
-		}
-
-		await page.save()
 
 		const updatedComment = await commentsModel.findByIdAndUpdate(id, {isApproved: true}, {new: true})
 		return res.status(201).json({message: "Comment Approved Successfully!", updatedComment})

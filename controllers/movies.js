@@ -3,6 +3,8 @@ const castModel = require("../models/castUser")
 const fs = require("fs")
 const path = require("path")
 const mongoose = require("mongoose");
+const commentsModel = require("../models/comments")
+const favoriteMoviesModel = require("../models/favoriteMovies")
 
 
 exports.create = async (req, res, next) => {
@@ -92,8 +94,11 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 
+		await commentsModel.deleteMany({page: targetMovie._id})
+		await favoriteMoviesModel.deleteMany({movie: targetMovie._id})
+
 		const medias = targetMovie.medias.map(media => media) ?? undefined;
-		const cover = targetMovie.cover ?? undefined
+		const cover = targetMovie.cover ?? undefined;
 
 		medias.forEach(media => {
 			media && fs.unlink(path.join(__dirname, '../public/moviesPictures', media), err => {

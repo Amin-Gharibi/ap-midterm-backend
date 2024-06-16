@@ -2,6 +2,7 @@ const castUserModel = require("../models/castUser")
 const fs = require("fs")
 const path = require("path")
 const moviesModel = require("../models/movies");
+const commentsModel = require("../models/comments")
 
 exports.create = async (req, res, next) => {
 	try {
@@ -79,6 +80,15 @@ exports.delete = async (req, res, next) => {
 		if (!targetCast) {
 			return res.status(404).json({message: "Cast Not Found!"})
 		}
+
+		// remove cast name from all movies he has acted in
+		await moviesModel.updateMany(
+			{"cast.castId": targetCast._id},
+			{$pull: {cast: {castId: targetCast._id}}}
+		)
+
+		// remove all comments of his page
+		await commentsModel.deleteMany({page: targetCast._id})
 
 		// delete cast related files
 		if (targetCast.profilePic && targetCast.profilePic !== 'default_prof_pic.png') {
