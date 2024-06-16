@@ -2,11 +2,11 @@ const articlesModel = require("../models/articles")
 const favoriteArticlesModel = require("../models/favoriteArticles")
 const fs = require("fs")
 const path = require("path")
+const newLiner = require("../utils/newliner");
 
 
 exports.create = async (req, res, next) => {
 	try {
-		console.log({...req.body})
 		const body = await articlesModel.createValidation({writer: req.user._id, ...req.body})
 		const cover = req.files?.cover[0]?.filename ?? undefined
 
@@ -172,6 +172,20 @@ exports.getMyComments = async (req, res, next) => {
 		const userArticles = await articlesModel.find({writer: req.user._id})
 
 		return res.status(200).json({message: "User Articles Received Successfully!", userArticles})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.getLatest = async (req, res, next) => {
+	try {
+		const latestArticles = await articlesModel.find({isPublished: true}).sort({createdAt: -1}).limit(9).lean();
+
+		for (const article of latestArticles) {
+			article.body = newLiner(article.body.slice(0, 200) + '...', 50)
+		}
+
+		return res.status(200).json({message: "Latest Articles Received Successfully!", latestArticles})
 	} catch (e) {
 		next(e)
 	}

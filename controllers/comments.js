@@ -2,7 +2,6 @@ const commentsModel = require("../models/comments")
 const moviesModel = require("../models/movies")
 const articlesModel = require("../models/articles")
 const castUsersModel = require("../models/castUser")
-const normalUsersModel = require("../models/normalUser")
 const newLiner = require("../utils/newliner")
 
 exports.create = async (req, res, next) => {

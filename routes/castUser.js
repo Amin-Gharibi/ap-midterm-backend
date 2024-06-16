@@ -24,6 +24,10 @@ router
 	.get(controller.searchHandler)
 
 router
+	.route('/toprated')
+	.get(controller.getTopRated)
+
+router
 	.route('/:id')
 	.get(controller.getOne)
 	.delete(isAuth, isAdmin, controller.delete)

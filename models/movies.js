@@ -34,7 +34,7 @@ const moviesSchema = new mongoose.Schema({
 		default: 0
 	},
 	genre: {
-		type: String
+		type: Array
 	},
 	releaseDate: {
 		type: String
@@ -58,7 +58,7 @@ const moviesSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false
 	}
-})
+}, {timestamps: true})
 
 moviesSchema.statics.createValidation = function (body) {
 	return createValidator.validate(body, {abortEarly: false})

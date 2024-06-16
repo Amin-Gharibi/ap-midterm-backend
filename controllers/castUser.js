@@ -2,7 +2,9 @@ const castUserModel = require("../models/castUser")
 const fs = require("fs")
 const path = require("path")
 const moviesModel = require("../models/movies");
-const commentsModel = require("../models/comments")
+const commentsModel = require("../models/comments");
+const newLiner = require("../utils/newliner");
+
 
 exports.create = async (req, res, next) => {
 	try {
@@ -149,6 +151,20 @@ exports.searchHandler = async (req, res, next) => {
 		})
 
 		return res.status(200).json({message: "Search Result Found!", result: targetCasts})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.getTopRated = async (req, res, next) => {
+	try {
+		const topRated = await castUserModel.find().sort({rate: -1}).limit(3).lean()
+
+		for (const cast of topRated) {
+			cast.biography = newLiner(cast.biography.slice(0, 200), 50)
+		}
+
+		return res.status(200).json({message: "Top Rated Artists Found!", topRated})
 	} catch (e) {
 		next(e)
 	}

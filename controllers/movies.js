@@ -5,11 +5,12 @@ const path = require("path")
 const mongoose = require("mongoose");
 const commentsModel = require("../models/comments")
 const favoriteMoviesModel = require("../models/favoriteMovies")
+const newLiner = require("../utils/newliner")
 
 
 exports.create = async (req, res, next) => {
 	try {
-		const body = await moviesModel.createValidation(req.body)
+		let {genre, ...body} = await moviesModel.createValidation(req.body)
 		const medias = req.files.medias?.map(media => media.filename) ?? undefined
 		const cover = req.files.cover[0]?.filename ?? undefined
 
@@ -20,8 +21,11 @@ exports.create = async (req, res, next) => {
 			}
 		}
 
+		genre = genre.split(' ')
+
 		const createdMovie = await moviesModel.create({
 			...body,
+			genre,
 			medias,
 			cover
 		})
@@ -33,7 +37,7 @@ exports.create = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
 	try {
-		const {
+		let {
 			id,
 			fullName,
 			summary,
@@ -66,6 +70,8 @@ exports.update = async (req, res, next) => {
 				if (err) console.log(err)
 			})
 		}
+
+		genre = genre.split(' ')
 
 		const updatedMovie = await moviesModel.findByIdAndUpdate(id, {
 			fullName,
@@ -194,6 +200,46 @@ exports.searchHandler = async (req, res, next) => {
 		}
 
 		return res.status(200).json({message: "Search Result Found!", result: targetMovies})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.getLatest = async (req, res, next) => {
+	try {
+		const latestMovies = await moviesModel.find({isPublished: true}).sort({createdAt: -1}).limit(9).lean();
+
+		for (const movie of latestMovies) {
+			movie.summary = newLiner(movie.summary, 30)
+		}
+
+		return res.status(200).json({message: "Latest Movies Received Successfully!", latestMovies})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.getRandomGenreTopList = async (req, res, next) => {
+	try {
+		const allMovies = await moviesModel.find({isPublished: true}).lean();
+
+		let genres = new Set()
+		allMovies.forEach(movie => {
+			if (movie.genre && Array.isArray(movie.genre)) {
+				movie.genre.forEach(genre => genres.add(genre))
+			}
+		})
+		genres = Array.from(genres)
+
+		const randomGenre = genres[Math.floor(Math.random() * genres.length)]
+
+		const genreTopRatedMovies = await moviesModel.find({isPublished: true, genre: randomGenre}).sort({rate: -1}).limit(9).lean();
+
+		for (const movie of genreTopRatedMovies) {
+			movie.summary = newLiner(movie.summary.slice(0, 200), 40)
+		}
+
+		return res.status(200).json({message: "Random Genre Top Rated Movies Found!", genre: randomGenre, topMovies: genreTopRatedMovies})
 	} catch (e) {
 		next(e)
 	}

@@ -35,6 +35,10 @@ router
 	.get(isAuth, controller.searchHandler)
 
 router
+	.route('/latest')
+	.get(controller.getLatest)
+
+router
 	.route('/:id')
 	.get(isAuth, controller.getOne)
 	.delete(isAuth, controller.delete)

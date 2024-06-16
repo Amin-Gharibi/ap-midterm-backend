@@ -28,6 +28,14 @@ router
 	.put(isAuth, isAdmin, controller.changeStatus)
 
 router
+	.route('/latest')
+	.get(controller.getLatest)
+
+router
+	.route('/randomgenretoprated')
+	.get(controller.getRandomGenreTopList)
+
+router
 	.route('/search')
 	.get(isAuth, controller.searchHandler)
 

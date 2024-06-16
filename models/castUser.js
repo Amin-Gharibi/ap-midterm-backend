@@ -29,6 +29,10 @@ const castUserSchema = new mongoose.Schema({
 	},
 	height: {
 		type: Number
+	},
+	rate: {
+		type: Number,
+		default: 0
 	}
 })
 
