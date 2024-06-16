@@ -23,7 +23,7 @@ const commentsSchema = new mongoose.Schema({
 	},
 	rate: {
 		type: Number,
-		required: false
+		default: 0
 	},
 	likes: {
 		type: [new mongoose.Schema({
@@ -58,9 +58,6 @@ commentsSchema.statics.createValidation = function (body) {
 	return createValidator.validate(body, {abortEarly: false})
 }
 commentsSchema.statics.approveValidation = function (body) {
-	return idValidator.validate(body, {abortEarly: false})
-}
-commentsSchema.statics.rejectValidation = function (body) {
 	return idValidator.validate(body, {abortEarly: false})
 }
 commentsSchema.statics.deleteValidation = function (body) {

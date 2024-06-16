@@ -24,10 +24,6 @@ router
 	.put(isAuth, isAdmin, controller.approve)
 
 router
-	.route('/reject/:id')
-	.put(isAuth, isAdmin, controller.reject)
-
-router
 	.route('/like/:id')
 	.put(isAuth, controller.like)
 

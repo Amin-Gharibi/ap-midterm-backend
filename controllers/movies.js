@@ -137,10 +137,25 @@ exports.getAll = async (req, res, next) => {
 exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await moviesModel.getOneValidation(req.params)
-		const targetMovie = await moviesModel.findById(id)
-		if (!targetMovie || (!targetMovie.isPublished && req.user?.role !== 'ADMIN')) {
+		const targetMovie = await moviesModel.findById(id).populate('cast.castId').lean()
+		// if (!targetMovie || (!targetMovie.isPublished && req.user?.role !== 'ADMIN')) {
+		// 	return res.status(404).json({message: "Movie Not Found!"})
+		// }
+		if (!targetMovie) {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
+
+		const movieComments = await commentsModel.find({page: targetMovie._id, isApproved: true}).populate('user', '-password')
+
+		targetMovie.summary = newLiner(targetMovie.summary, 150)
+		targetMovie.comments = movieComments
+
+		for (const cast of targetMovie.cast) {
+			cast.cast = cast.castId
+			delete cast.castId
+			cast.cast.biography = newLiner(cast.cast.biography.slice(0, 200), 40)
+		}
+
 		return res.status(200).json({message: "target movie received successfully", targetMovie})
 	} catch (e) {
 		next(e)

@@ -2,12 +2,10 @@ const commentsModel = require("../models/comments")
 const moviesModel = require("../models/movies")
 const articlesModel = require("../models/articles")
 const castUsersModel = require("../models/castUser")
-const newLiner = require("../utils/newliner")
 
 exports.create = async (req, res, next) => {
 	try {
 		const body = await commentsModel.createValidation(req.body)
-		body.body = newLiner(body.body, 150)
 
 		const isPageAvailable = (await moviesModel.findById(body.page)) || (await articlesModel.findById(body.page)) || (await castUsersModel.findById(body.page));
 
@@ -52,21 +50,6 @@ exports.approve = async (req, res, next) => {
 
 		const updatedComment = await commentsModel.findByIdAndUpdate(id, {isApproved: true}, {new: true})
 		return res.status(201).json({message: "Comment Approved Successfully!", updatedComment})
-	} catch (e) {
-		next(e)
-	}
-}
-
-exports.reject = async (req, res, next) => {
-	try {
-		const {id} = await commentsModel.rejectValidation(req.params)
-		const targetComment = await commentsModel.findById(id)
-		if (!targetComment) {
-			return res.status(404).json({message: "Comment Not Found!"})
-		}
-
-		const updatedComment = await commentsModel.findByIdAndUpdate(id, {isApproved: false}, {new: true})
-		return res.status(201).json({message: "Comment Rejected Successfully!", updatedComment})
 	} catch (e) {
 		next(e)
 	}

@@ -9,7 +9,8 @@ const {
 
 const castUserSchema = new mongoose.Schema({
 	castId: {
-		type: mongoose.Types.ObjectId
+		type: mongoose.Types.ObjectId,
+		ref: 'CastUsers'
 	},
 	inMovieName: {
 		type: String
