@@ -4,7 +4,11 @@ const newLiner = require("../utils/newliner");
 
 exports.getAll = async (req, res, next) => {
 	try {
-		const allFavoriteArticles = await favoriteArticlesModel.find({user: req.user._id}).populate('article').lean()
+		let allFavoriteArticles = await favoriteArticlesModel.find({user: req.user._id}).populate('article').lean()
+
+		allFavoriteArticles = allFavoriteArticles.filter(article => {
+			return article.article.isPublished
+		})
 
 		for (const favoriteArticle of allFavoriteArticles) {
 			favoriteArticle.article.body = newLiner(favoriteArticle.article.body, 50)
@@ -23,7 +27,7 @@ exports.create = async (req, res, next) => {
 
 		const targetArticle = await articleModel.findById(article)
 
-		if (!targetArticle || !targetArticle.isPublished){
+		if (!targetArticle || !targetArticle.isPublished) {
 			return res.status(404).json({message: "No Article Found"})
 		}
 

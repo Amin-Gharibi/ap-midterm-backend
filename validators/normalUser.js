@@ -45,9 +45,15 @@ const changeRoleValidator = yup.object().shape({
 		.oneOf(['ADMIN', 'CRITIC', 'USER'], 'Role can be one of ADMIN, CRITIC, USER')
 })
 
+const searchValidator = yup.object().shape({
+	q: yup
+		.string()
+})
+
 
 module.exports = {
 	updateUserValidator,
 	idValidator,
-	changeRoleValidator
+	changeRoleValidator,
+	searchValidator
 }

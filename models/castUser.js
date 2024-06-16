@@ -3,7 +3,7 @@ const {
 	createUserValidator,
 	updateUserValidator,
 	deleteUserValidator,
-	getOneUserValidator
+	getOneUserValidator, searchValidator
 } = require("../validators/castUser")
 
 const castUserSchema = new mongoose.Schema({
@@ -43,6 +43,9 @@ castUserSchema.statics.deleteUserValidation = function (body) {
 }
 castUserSchema.statics.getOneUserValidation = function (body) {
 	return getOneUserValidator.validate(body, {abortEarly: false})
+}
+castUserSchema.statics.searchValidation = function (body) {
+	return searchValidator.validate(body, {abortEarly: false})
 }
 
 const model = mongoose.model('CastUsers', castUserSchema)

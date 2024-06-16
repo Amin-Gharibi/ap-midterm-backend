@@ -9,8 +9,17 @@ const approveEmailSubject = 'Congratulations! You Are Now In IMDB M.M.'
 const approveEmailTemplate = (fullName) => (`
 <div>
 	<h1 style="text-align: center;">Congratulations Dear ${fullName}</h1>
-	<p style="text-align: start;">Dear ${fullName}, Your Account has been approved by the administration and now you can easily login to your account using the credentials you entered while signing up!</p>
+	<p style="text-align: start;">Dear ${fullName}, Your Account has been approved by the administration, and now you can easily log-in to your account using the credentials you entered while signing up!</p>
 	<h5 style="text-align: start;">Feel free to share your thoughts with administration :) ❤️</h5>
+	<h4 style="text-align: center;">IMDB M.M.</h4>
+</div>
+`)
+const rejectEmailSubject = "Sorry! Buy You Couldn't Make It To IMDB M.M."
+const rejectEmailTemplate = (fullName) => (`
+<div>
+	<h1 style="text-align: center;">Sorry Dear ${fullName}</h1>
+	<p style="text-align: start;">Dear ${fullName}, Your Account Wasn't Qualified To Make It To IMDB M.M.! You Can Try Again If You Think There Has Been A Mistake.</p>
+	<h5 style="text-align: start;">Feel free to share your thoughts with administration! ❤️</h5>
 	<h4 style="text-align: center;">IMDB M.M.</h4>
 </div>
 `)
@@ -77,9 +86,23 @@ exports.approve = async (req, res, next) => {
 			isApproved: true
 		}, {new: true})
 
-		await emailSender(user.email,approveEmailSubject, approveEmailTemplate(user.fullName))
+		await emailSender(user.email, approveEmailSubject, approveEmailTemplate(user.fullName))
 
 		return res.status(200).json({message: "User Was Approved Successfully!"})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.reject = async (req, res, next) => {
+	try {
+		const {id} = await normalUserModel.approveValidation(req.params)
+
+		const user = await normalUserModel.findByIdAndDelete(id)
+
+		await emailSender(user.email, rejectEmailSubject, rejectEmailTemplate(user.fullName))
+
+		return res.status(200).json({message: "User Was Rejected Successfully!"})
 	} catch (e) {
 		next(e)
 	}
@@ -157,7 +180,11 @@ exports.unBan = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
 	try {
-		const users = await normalUserModel.find().select('-password');
+		const users = await normalUserModel.find({isApproved: true}).select('-password').lean();
+
+		for (const user of users) {
+			user.isBanned = !!(await banUsersModel.findOne({email: user.email}))
+		}
 
 		return res.status(200).json({message: "Users Found Successfully!", users})
 	} catch (e) {
@@ -172,6 +199,48 @@ exports.getOne = async (req, res, next) => {
 		const user = await normalUserModel.findById(id).select('-password')
 
 		return res.status(200).json({message: "User Was Found Successfully!", user})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.getWaitList = async (req, res, next) => {
+	try {
+		const approvedUsers = await normalUserModel.find({isApproved: false}, '-password').lean()
+
+		const waitListUsers = [];
+		for (const user of approvedUsers) {
+			const isUserBanned = await banUsersModel.findOne({email: user.email});
+			if (!isUserBanned) {
+				waitListUsers.push(user);
+			}
+		}
+
+		return res.status(200).json({message: "WaitList users received successfully!", waitListUsers})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.search = async (req, res, next) => {
+	try {
+		const {q} = await normalUserModel.searchValidation(req.query)
+
+		let targetUsers = null
+
+		targetUsers = await normalUserModel.find({
+			$or: [
+				{ fullName: { $regex: q, $options: 'i' } },
+				{ email: { $regex: q, $options: 'i' } },
+				{ username: { $regex: q, $options: 'i' } }
+			]
+		}, '-password').lean()
+
+		for (const user of targetUsers) {
+			user.isBanned = !!(await banUsersModel.findOne({email: user.email}))
+		}
+
+		return res.status(200).json({message: "Search Result Found!", result: targetUsers})
 	} catch (e) {
 		next(e)
 	}

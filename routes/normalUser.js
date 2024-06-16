@@ -13,8 +13,20 @@ router
 	.get(isAuth, isAdmin, controller.getAll)
 
 router
+	.route('/waitlist')
+	.get(isAuth, isAdmin, controller.getWaitList)
+
+router
+	.route('/search')
+	.get(isAuth, isAdmin, controller.search)
+
+router
 	.route('/approve/:id')
 	.put(isAuth, isAdmin, controller.approve)
+
+router
+	.route('/reject/:id')
+	.put(isAuth, isAdmin, controller.reject)
 
 router
 	.route('/ban/:id')

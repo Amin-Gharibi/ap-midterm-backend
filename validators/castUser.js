@@ -58,10 +58,16 @@ const getOneUserValidator = yup.object().shape({
 		.matches(/^[0-9a-fA-F]{24}$/, "cast id is not valid")
 })
 
+const searchValidator = yup.object().shape({
+	q: yup
+		.string()
+})
+
 
 module.exports = {
 	createUserValidator,
 	updateUserValidator,
 	deleteUserValidator,
-	getOneUserValidator
+	getOneUserValidator,
+	searchValidator
 }

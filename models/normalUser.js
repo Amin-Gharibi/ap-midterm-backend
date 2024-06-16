@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
 const {registerValidator, loginValidator} = require("../validators/auth")
-const {updateUserValidator, idValidator, changeRoleValidator} = require("../validators/normalUser")
+const {updateUserValidator, idValidator, changeRoleValidator, searchValidator} = require("../validators/normalUser")
 
 const normalUserSchema = new mongoose.Schema({
 	email: {
@@ -63,6 +63,9 @@ normalUserSchema.statics.banValidation = function (body) {
 }
 normalUserSchema.statics.unBanValidation = function (body) {
 	return idValidator.validate(body, {abortEarly: false})
+}
+normalUserSchema.statics.searchValidation = function (body) {
+	return searchValidator.validate(body, {abortEarly: false})
 }
 
 const model = mongoose.model('NormalUsers', normalUserSchema)

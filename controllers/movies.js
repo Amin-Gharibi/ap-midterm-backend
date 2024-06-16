@@ -127,7 +127,7 @@ exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await moviesModel.getOneValidation(req.params)
 		const targetMovie = await moviesModel.findById(id)
-		if (!targetMovie || (!targetMovie.isApproved && req.user?.role !== 'ADMIN')) {
+		if (!targetMovie || (!targetMovie.isPublished && req.user?.role !== 'ADMIN')) {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 		return res.status(200).json({message: "target movie received successfully", targetMovie})
@@ -145,7 +145,7 @@ exports.changeStatus = async (req, res, next) => {
 		}
 
 		const updatedMovie = await moviesModel.findByIdAndUpdate(id, {
-			isApproved: !targetMovie.isApproved
+			isPublished: !targetMovie.isPublished
 		}, {new: true})
 
 		return res.status(200).json({message: "Movie Status Changed Successfully!", updatedMovie})
@@ -157,7 +157,7 @@ exports.changeStatus = async (req, res, next) => {
 
 exports.getAllApproved = async (req, res, next) => {
 	try {
-		const approvedMovies = await moviesModel.find({isApproved: true})
+		const approvedMovies = await moviesModel.find({isPublished: true})
 
 		return res.status(200).json({message: "Approved Movies Found Successfully!", approvedMovies})
 	} catch (e) {
@@ -184,7 +184,7 @@ exports.searchHandler = async (req, res, next) => {
 					{ fullName: { $regex: q, $options: 'i' } },
 					{ summary: { $regex: q, $options: 'i' } }
 				],
-				isApproved: true
+				isPublished: true
 			})
 		}
 

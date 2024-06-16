@@ -54,7 +54,7 @@ const moviesSchema = new mongoose.Schema({
 	cover: {
 		type: String
 	},
-	isApproved: {
+	isPublished: {
 		type: Boolean,
 		default: false
 	}

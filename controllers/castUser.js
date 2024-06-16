@@ -1,6 +1,7 @@
 const castUserModel = require("../models/castUser")
 const fs = require("fs")
 const path = require("path")
+const moviesModel = require("../models/movies");
 
 exports.create = async (req, res, next) => {
 	try {
@@ -53,7 +54,7 @@ exports.update = async (req, res, next) => {
 			});
 		}
 
-		const updatedCast = await castUserModel.findByIdAndUpdate(id,  {
+		const updatedCast = await castUserModel.findByIdAndUpdate(id, {
 			fullName,
 			biography,
 			birthDate,
@@ -119,6 +120,25 @@ exports.getOne = async (req, res, next) => {
 		const targetCast = await castUserModel.findById(id)
 
 		return res.status(200).json({message: "Target cast received successfully", targetCast})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.searchHandler = async (req, res, next) => {
+	try {
+		const {q} = await castUserModel.searchValidation(req.query)
+
+		let targetCasts = null
+
+
+		targetCasts = await castUserModel.find({
+			$or: [
+				{fullName: {$regex: q, $options: 'i'}}
+			]
+		})
+
+		return res.status(200).json({message: "Search Result Found!", result: targetCasts})
 	} catch (e) {
 		next(e)
 	}

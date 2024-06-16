@@ -37,7 +37,9 @@ const createValidator = yup.object().shape({
 		.number(),
 	medias: yup.array(),
 	cover: yup
-		.string()
+		.string(),
+	isPublished: yup
+		.bool()
 })
 
 const updateValidator = yup.object().shape({

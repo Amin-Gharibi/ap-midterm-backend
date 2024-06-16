@@ -4,7 +4,11 @@ const movieModel = require("../models/movies");
 
 exports.getAll = async (req, res, next) => {
 	try {
-		const allFavoriteMovies = await favoriteMoviesModel.find({user: req.user._id}).populate('movie').lean()
+		let allFavoriteMovies = await favoriteMoviesModel.find({user: req.user._id}).populate('movie').lean()
+
+		allFavoriteMovies = allFavoriteMovies.filter(movie => {
+			return movie.movie?.isPublished
+		})
 
 		for (const favoriteMovie of allFavoriteMovies) {
 			favoriteMovie.movie.summary = newLiner(favoriteMovie.movie.summary, 50)
@@ -23,7 +27,7 @@ exports.create = async (req, res, next) => {
 
 		const targetMovie = await movieModel.findById(article)
 
-		if (!targetMovie || !targetMovie.isApproved){
+		if (!targetMovie || !targetMovie.isPublished){
 			return res.status(404).json({message: "No Movie Found"})
 		}
 
