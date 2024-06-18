@@ -180,7 +180,10 @@ exports.getCastMovies = async (req, res, next) => {
 		const {id} = await castUserModel.getOneUserValidation(req.params)
 
 		const castMovies = await moviesModel.find(
-			{"cast.castId": id}
+			{
+				"cast.castId": id,
+				isPublished: true
+			}
 		)
 
 		return res.status(200).json({message: "Cast Movies Received Successfully!", castMovies})

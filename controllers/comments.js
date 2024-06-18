@@ -227,17 +227,22 @@ exports.getPageComments = async (req, res, next) => {
 
 exports.getMyComments = async (req, res, next) => {
 	try {
-		const userComments = await commentsModel.find({
+		let userComments = await commentsModel.find({
 			user: req.user._id,
 			isApproved: true,
 			parentComment: null
-		}).populate('page user', '-password').lean()
+		}).populate('page user', '-password').populate({
+			path: 'page',
+			match: {isPublished: true}
+		}).lean()
 
-		for (const comment of userComments) {
-			comment.replies = Array.from(await commentsModel.find({
+		userComments = userComments.filter(comment => comment.page)
+
+		for (const comment of Array.from(userComments)) {
+			comment.replies = await commentsModel.find({
 				isApproved: true,
 				parentComment: comment._id
-			}).populate('user', '-password').lean()).slice(0, 2)
+			}).populate('user', '-password').limit(2).lean();
 		}
 
 		return res.status(200).json({message: "My Comments Received Successfully!", userComments})

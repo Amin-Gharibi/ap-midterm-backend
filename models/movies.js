@@ -43,7 +43,7 @@ const moviesSchema = new mongoose.Schema({
 	countries: {
 		type: String
 	},
-	language: {
+	movieLanguage: {
 		type: String
 	},
 	budget: {
