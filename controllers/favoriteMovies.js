@@ -25,7 +25,7 @@ exports.create = async (req, res, next) => {
 	try {
 		const {movie} = await favoriteMoviesModel.createValidation(req.body)
 
-		const targetMovie = await movieModel.findById(article)
+		const targetMovie = await movieModel.findById(movie)
 
 		if (!targetMovie || !targetMovie.isPublished){
 			return res.status(404).json({message: "No Movie Found"})

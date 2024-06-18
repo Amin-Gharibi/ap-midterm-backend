@@ -96,10 +96,15 @@ exports.getAll = async (req, res, next) => {
 exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await articlesModel.getOneValidation(req.params)
-		const targetArticle = await articlesModel.findById(id)
+		const targetArticle = await articlesModel.findById(id).populate('writer').lean()
 		if (!targetArticle || (!targetArticle.isPublished && req.user?.role !== 'ADMIN')) {
 			return res.status(404).json({message: "Article Not Found!"})
 		}
+
+		targetArticle.body = newLiner(targetArticle.body, 150)
+
+		targetArticle.isArticleInFavorites = await favoriteArticlesModel.findOne({article: targetArticle._id})
+
 		return res.status(200).json({message: "target article received successfully", targetArticle})
 	} catch (e) {
 		next(e)

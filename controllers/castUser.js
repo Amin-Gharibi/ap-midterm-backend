@@ -129,7 +129,12 @@ exports.getAll = async (req, res, next) => {
 exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await castUserModel.getOneUserValidation(req.params)
-		const targetCast = await castUserModel.findById(id)
+		const targetCast = await castUserModel.findById(id).lean();
+		if (!targetCast) {
+			return res.status(404).json({message: "Cast Not Found!"})
+		}
+
+		targetCast.biography = newLiner(targetCast.biography, 200)
 
 		return res.status(200).json({message: "Target cast received successfully", targetCast})
 	} catch (e) {
@@ -165,6 +170,20 @@ exports.getTopRated = async (req, res, next) => {
 		}
 
 		return res.status(200).json({message: "Top Rated Artists Found!", topRated})
+	} catch (e) {
+		next(e)
+	}
+}
+
+exports.getCastMovies = async (req, res, next) => {
+	try {
+		const {id} = await castUserModel.getOneUserValidation(req.params)
+
+		const castMovies = await moviesModel.find(
+			{"cast.castId": id}
+		)
+
+		return res.status(200).json({message: "Cast Movies Received Successfully!", castMovies})
 	} catch (e) {
 		next(e)
 	}

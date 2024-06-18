@@ -28,6 +28,10 @@ router
 	.get(controller.getTopRated)
 
 router
+	.route('/movies/:id')
+	.get(controller.getCastMovies)
+
+router
 	.route('/:id')
 	.get(controller.getOne)
 	.delete(isAuth, isAdmin, controller.delete)

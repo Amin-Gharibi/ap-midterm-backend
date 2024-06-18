@@ -138,10 +138,7 @@ exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await moviesModel.getOneValidation(req.params)
 		const targetMovie = await moviesModel.findById(id).populate('cast.castId').lean()
-		// if (!targetMovie || (!targetMovie.isPublished && req.user?.role !== 'ADMIN')) {
-		// 	return res.status(404).json({message: "Movie Not Found!"})
-		// }
-		if (!targetMovie) {
+		if (!targetMovie || (!targetMovie.isPublished && req.user?.role !== 'ADMIN')) {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 
@@ -155,6 +152,8 @@ exports.getOne = async (req, res, next) => {
 			delete cast.castId
 			cast.cast.biography = newLiner(cast.cast.biography.slice(0, 200), 40)
 		}
+
+		targetMovie.isMovieInFavorites = await favoriteMoviesModel.findOne({movie: targetMovie._id})
 
 		return res.status(200).json({message: "target movie received successfully", targetMovie})
 	} catch (e) {

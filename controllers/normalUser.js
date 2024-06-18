@@ -127,12 +127,23 @@ exports.delete = async (req, res, next) => {
 
 		const userComments = await commentsModel.find({user: id})
 		for (const comment of userComments) {
-			const targetPage = (await articlesModel.findById(comment.page)) || (await castUserModel.findById(comment.page)) || (await moviesModel.findById(comment.page))
-			const targetPageCommentsCounts = Array.from((await commentsModel.find({page: comment.page, parentComment: null}))).length
-			if (targetUser.role === 'CRITIC') {
-				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * comment.rate)) / (targetPageCommentsCounts - 1)
+			const targetPage = await articlesModel.findById(comment.page) ||
+				await castUserModel.findById(comment.page) ||
+				await moviesModel.findById(comment.page);
+
+			const targetPageCommentsCounts = Array.from((await commentsModel.find({
+				page: comment.page,
+				parentComment: null
+			}))).length;
+
+			if (targetPageCommentsCounts <= 1) {
+				targetPage.rate = 0
 			} else {
-				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - comment.rate) / (targetPageCommentsCounts - 1)
+				if (targetUser.role === 'CRITIC') {
+					targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 1)
+				} else {
+					targetPage.rate = (targetPage.rate * targetPageCommentsCounts - targetComment.rate) / (targetPageCommentsCounts - 1)
+				}
 			}
 			targetPage.save()
 			await commentsModel.findByIdAndDelete(comment._id)
@@ -253,9 +264,9 @@ exports.search = async (req, res, next) => {
 
 		targetUsers = await normalUserModel.find({
 			$or: [
-				{ fullName: { $regex: q, $options: 'i' } },
-				{ email: { $regex: q, $options: 'i' } },
-				{ username: { $regex: q, $options: 'i' } }
+				{fullName: {$regex: q, $options: 'i'}},
+				{email: {$regex: q, $options: 'i'}},
+				{username: {$regex: q, $options: 'i'}}
 			]
 		}, '-password').lean()
 

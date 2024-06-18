@@ -2,6 +2,7 @@ const commentsModel = require("../models/comments")
 const moviesModel = require("../models/movies")
 const articlesModel = require("../models/articles")
 const castUsersModel = require("../models/castUser")
+const normalUsersModel = require("../models/normalUser")
 
 exports.create = async (req, res, next) => {
 	try {
@@ -63,12 +64,42 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "Comment Not Found!"})
 		}
 
+		const targetUser = await normalUsersModel.findById(targetComment.user)
+		if (!targetUser) {
+			return res.status(404).json({message: "User Not Found!"})
+		}
+
+		const targetPage = await articlesModel.findById(targetComment.page) ||
+			await castUsersModel.findById(targetComment.page) ||
+			await moviesModel.findById(targetComment.page);
+		if (!targetPage) {
+			return res.status(404).json({message: "Page Not Found!"})
+		}
+
+		const targetPageComments = await commentsModel.find({page: targetComment.page, parentComment: null})
+		const targetPageCommentsCounts = targetPageComments.length
+
+		if (targetPageCommentsCounts <= 1) {
+			targetPage.rate = 0
+		} else {
+			if (targetUser.role === 'CRITIC') {
+				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 1)
+			} else {
+				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - targetComment.rate) / (targetPageCommentsCounts - 1)
+			}
+		}
+
+		await targetPage.save()
+
+		await commentsModel.deleteMany({parentComment: targetComment._id})
+
 		await commentsModel.findByIdAndDelete(id)
-		return res.status(201).json({message: "Comment Deleted Successfully!"})
+		return res.status(200).json({message: "Comment Deleted Successfully!"})
 	} catch (e) {
-		next(e)
+		next(e);
 	}
 }
+
 
 exports.like = async (req, res, next) => {
 	try {
@@ -89,12 +120,12 @@ exports.like = async (req, res, next) => {
 		const isUserInDislikes = targetComment.disLikes.find(user => user._id.equals(req.user._id))
 
 		if (isUserInDislikes) {
-			updatedDisLikes = updatedDisLikes.slice(isUserInDislikes, isUserInDislikes+1)
+			updatedDisLikes = updatedDisLikes.slice(isUserInDislikes, isUserInDislikes + 1)
 		}
 
 		updatedLikes.push(req.user._id)
 
-		const updatedComment = await commentsModel.findByIdAndUpdate(id,  {
+		const updatedComment = await commentsModel.findByIdAndUpdate(id, {
 			disLikes: updatedDisLikes,
 			likes: updatedLikes
 		}, {new: true})
@@ -124,12 +155,12 @@ exports.disLike = async (req, res, next) => {
 		const isUserInLikes = targetComment.likes.find(user => user._id.equals(req.user._id))
 
 		if (isUserInLikes) {
-			updatedLikes = updatedLikes.slice(isUserInLikes, isUserInLikes+1)
+			updatedLikes = updatedLikes.slice(isUserInLikes, isUserInLikes + 1)
 		}
 
 		updatedDisLikes.push(req.user._id)
 
-		const updatedComment = await commentsModel.findByIdAndUpdate(id,  {
+		const updatedComment = await commentsModel.findByIdAndUpdate(id, {
 			disLikes: updatedDisLikes,
 			likes: updatedLikes
 		}, {new: true})
@@ -143,7 +174,7 @@ exports.disLike = async (req, res, next) => {
 exports.getOne = async (req, res, next) => {
 	try {
 		const {id} = await commentsModel.getOneValidation(req.params)
-		const targetComment = await commentsModel.findById(id)
+		const targetComment = await commentsModel.findById(id).populate('user')
 		if (!targetComment || (!targetComment.isApproved && req.user?.role !== 'ADMIN')) {
 			return res.status(404).json({message: "Comment Not Found!"})
 		}
@@ -174,10 +205,18 @@ exports.getPageComments = async (req, res, next) => {
 			return res.status(404).json({message: "No Page Found!"})
 		}
 
-		let pageComments = await commentsModel.find({page: id, isApproved: true, parentComment: null}).populate('user', '-password').lean()
+		let pageComments = await commentsModel.find({
+			page: id,
+			isApproved: true,
+			parentComment: null
+		}).populate('user', '-password').lean()
 
 		for (const comment of pageComments) {
-			comment.replies = await commentsModel.find({page: id, isApproved: true, parentComment: comment._id}).populate('user', '-password').lean()
+			comment.replies = await commentsModel.find({
+				page: id,
+				isApproved: true,
+				parentComment: comment._id
+			}).populate('user', '-password').lean()
 		}
 
 		return res.status(200).json({message: "Page Comments Received Successfully!", pageComments})
@@ -188,10 +227,17 @@ exports.getPageComments = async (req, res, next) => {
 
 exports.getMyComments = async (req, res, next) => {
 	try {
-		const userComments = await commentsModel.find({user: req.user._id, isApproved: true, parentComment: null}).populate('page user', '-password').lean()
+		const userComments = await commentsModel.find({
+			user: req.user._id,
+			isApproved: true,
+			parentComment: null
+		}).populate('page user', '-password').lean()
 
 		for (const comment of userComments) {
-			comment.replies = Array.from(await commentsModel.find({isApproved: true, parentComment: comment._id}).populate('user', '-password').lean()).slice(0, 2)
+			comment.replies = Array.from(await commentsModel.find({
+				isApproved: true,
+				parentComment: comment._id
+			}).populate('user', '-password').lean()).slice(0, 2)
 		}
 
 		return res.status(200).json({message: "My Comments Received Successfully!", userComments})
