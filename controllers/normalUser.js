@@ -68,7 +68,6 @@ exports.update = async (req, res, next) => {
 			})
 			const userComments = await commentsModel.find({user: id, isApproved: true, parentComment: null}).lean();
 			for (const comment of userComments) {
-				console.log(comment)
 				const pageComments = await commentsModel.find({page: comment.page, isApproved: true, parentComment: null}).populate('user').lean();
 				const ratesAndWeights = pageComments.map(comment => {
 					if (comment.user.role === 'CRITIC') {
@@ -156,28 +155,30 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "User Not Found!"})
 		}
 
-		const userComments = await commentsModel.find({user: id})
+		const userComments = await commentsModel.find({user: id, isApproved: true})
+		await commentsModel.deleteMany({user: id, isApproved: true})
+
 		for (const comment of userComments) {
 			const targetPage = await articlesModel.findById(comment.page) ||
 				await castUserModel.findById(comment.page) ||
 				await moviesModel.findById(comment.page);
 
-			const targetPageCommentsCounts = Array.from((await commentsModel.find({
+			const targetPageComments = await commentsModel.find({
 				page: comment.page,
+				isApproved: true,
 				parentComment: null
-			}))).length;
+			}).populate('user')
 
-			if (targetPageCommentsCounts <= 1) {
-				targetPage.rate = 0
-			} else {
-				if (targetUser.role === 'CRITIC') {
-					targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 2)
+			const ratesAndWeights = targetPageComments.map(comment => {
+				if (comment.user.role === 'CRITIC') {
+					return [comment.rate, 2]
 				} else {
-					targetPage.rate = (targetPage.rate * targetPageCommentsCounts - targetComment.rate) / (targetPageCommentsCounts - 1)
+					return [comment.rate, 1]
 				}
-			}
+			})
+
+			targetPage.rate = roundToNearestTenth(weightedMean(ratesAndWeights).toFixed(2))
 			targetPage.save()
-			await commentsModel.findByIdAndDelete(comment._id)
 		}
 
 		if (targetUser.profilePic !== 'default_prof_pic.png') {
