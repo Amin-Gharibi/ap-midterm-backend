@@ -12,7 +12,6 @@ const castUserModel = require("../models/castUser")
 const moviesModel = require("../models/movies")
 const roundToNearestTenth = require("../utils/roundToNearestTenth");
 const weightedMean = require("../utils/weightedMean");
-const castUsersModel = require("../models/castUser");
 
 
 const approveEmailSubject = 'Congratulations! You Are Now In IMDB M.M.'
@@ -76,7 +75,7 @@ exports.update = async (req, res, next) => {
 						return [comment.rate, 1]
 					}
 				})
-				const page = (await moviesModel.findById(comment.page)) || (await articlesModel.findById(comment.page)) || (await castUsersModel.findById(comment.page))
+				const page = (await moviesModel.findById(comment.page)) || (await articlesModel.findById(comment.page)) || (await castUserModel.findById(comment.page))
 				page.rate = roundToNearestTenth(weightedMean(ratesAndWeights).toFixed(2))
 				await page.save()
 			}

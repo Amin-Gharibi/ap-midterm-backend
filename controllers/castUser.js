@@ -39,32 +39,32 @@ exports.update = async (req, res, next) => {
 			return res.status(404).json({error: 'Cast Not Found!'});
 		}
 
-		const profilePicPath = req.files?.profilePic ? req.files.profilePic[0].filename : castUser.profilePic;
-		const photoPaths = req.files?.photos ? req.files.photos.map(file => file.filename) : castUser.photos;
+		const photos = req.files?.photos?.map(photo => photo.filename) ?? undefined;
+		const profilePic = req.files?.profilePic ? req.files.profilePic[0]?.filename : undefined;
 
 		// delete old files
-		if (req.files?.profilePic && castUser.profilePic !== 'default_prof_pic.png') {
+		if (profilePic && profilePic !== castUser.profilePic && castUser.profilePic !== 'default_prof_pic.png') {
 			fs.unlink(path.join(__dirname, '../public/moviesPictures', castUser.profilePic), err => {
 				if (err) console.log(err);
-			});
+			})
 		}
 
-		if (req.files?.photos && castUser.photos.length > 0) {
+		if (photos?.length) {
 			castUser.photos.forEach(photo => {
 				fs.unlink(path.join(__dirname, '../public/moviesPictures', photo), err => {
 					if (err) console.log(err);
-				});
-			});
+				})
+			})
 		}
 
 		const updatedCast = await castUserModel.findByIdAndUpdate(id, {
-			fullName,
-			biography,
-			birthDate,
-			birthPlace,
-			profilePic: profilePicPath,
-			photos: photoPaths,
-			height
+			fullName: fullName ?? undefined,
+			biography: biography ?? undefined,
+			birthDate: birthDate ?? undefined,
+			birthPlace: birthPlace ?? undefined,
+			profilePic,
+			photos,
+			height: height ?? undefined
 		}, {new: true})
 
 		return res.status(200).json({message: "Cast updated successfully", updatedCast});
@@ -72,7 +72,6 @@ exports.update = async (req, res, next) => {
 		next(e)
 	}
 }
-;
 
 exports.delete = async (req, res, next) => {
 	try {

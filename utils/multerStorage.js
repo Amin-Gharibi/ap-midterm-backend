@@ -9,7 +9,8 @@ module.exports.userProfilePicturesStorage = multer.diskStorage({
 	filename: (req, file, cb) => {
 		const sha256 = crypto.createHash('SHA256');
 		const hashedFileName = sha256.update(file.originalname).digest('hex');
-		cb(null, hashedFileName + path.extname(file.originalname));
+		const timestamp = String(Date.now());
+		cb(null, hashedFileName + timestamp + path.extname(file.originalname));
 	},
 })
 
@@ -20,7 +21,8 @@ module.exports.moviesPicturesStorage = multer.diskStorage({
 	filename: (req, file, cb) => {
 		const sha256 = crypto.createHash('SHA256');
 		const hashedFileName = sha256.update(file.originalname).digest('hex');
-		cb(null, hashedFileName + path.extname(file.originalname));
+		const timestamp = String(Date.now());
+		cb(null, hashedFileName + timestamp + path.extname(file.originalname));
 	},
 })
 
@@ -31,6 +33,7 @@ module.exports.articlesCoversStorage = multer.diskStorage({
 	filename: (req, file, cb) => {
 		const sha256 = crypto.createHash('SHA256');
 		const hashedFileName = sha256.update(file.originalname).digest('hex');
-		cb(null, hashedFileName + path.extname(file.originalname));
+		const timestamp = String(Date.now());
+		cb(null, hashedFileName + timestamp + path.extname(file.originalname));
 	},
 })

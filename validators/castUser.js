@@ -31,17 +31,22 @@ const updateUserValidator = yup.object().shape({
 		.matches(/^[0-9a-fA-F]{24}$/, "cast id is not valid"),
 	fullName: yup
 		.string()
+		.nullable()
 		.min(6, 'Min character count for cast name is 6')
 		.max(36, 'Max character count for cast name is 36'),
 	biography: yup
-		.string(),
+		.string()
+		.nullable(),
 	birthDate: yup
-		.date(),
+		.string()
+		.nullable()
+		.matches(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/\d{4}$/, 'Birth date must match dd/mm/yyyy'),
 	birthPlace: yup
-		.string(),
-	profilePic: yup.string(),
-	photos: yup.array(),
-	height: yup.number(),
+		.string()
+		.nullable(),
+	profilePic: yup.string().nullable(),
+	photos: yup.array().nullable(),
+	height: yup.number().nullable(),
 })
 
 const deleteUserValidator = yup.object().shape({
