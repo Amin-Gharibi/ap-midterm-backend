@@ -33,14 +33,23 @@ const rejectEmailTemplate = (fullName) => (`
 
 exports.update = async (req, res, next) => {
 	try {
-		const {
+		let {
 			id,
 			email,
 			username,
 			fullName,
 			currentPassword,
-			updatingPassword
+			updatingPassword,
+			role
 		} = await normalUserModel.updateValidation({...req.body, ...req.params})
+
+		if (req.user.role !== 'ADMIN') {
+			role = undefined
+		}
+
+		if (req.user.role !== 'ADMIN' && !id.equals(req.user._id)) {
+			return res.status(401).json({message: "You Are Not Authorized!"})
+		}
 
 		const profilePic = req.files?.profilePic[0]?.filename ?? undefined
 
@@ -60,13 +69,12 @@ exports.update = async (req, res, next) => {
 			email: email ?? undefined,
 			username: username ?? undefined,
 			fullName: fullName ?? undefined,
-			profilePic: profilePic ?? undefined
+			profilePic: profilePic ?? undefined,
+			role: role ?? undefined
 		}, {new: true}).select('-password')
 
-		if (currentPassword && updatingPassword) {
-			if (req.user.role !== 'ADMIN' && !req.user._id.equals(id)) {
-				return res.status(401).json({message: "You Are Not Authorized!"})
-			} else if (req.user.role !== 'ADMIN' && req.user._id.equals(id)) {
+		if ((currentPassword && updatingPassword) || (req.user.role === 'ADMIN' && updatingPassword)) {
+			if (req.user.role !== 'ADMIN' && req.user._id.equals(id)) {
 				if (!(await bcrypt.compare(currentPassword, targetUser.password))) {
 					return res.status(401).json({message: "Entered Current Password is not correct!"})
 				}
@@ -140,7 +148,7 @@ exports.delete = async (req, res, next) => {
 				targetPage.rate = 0
 			} else {
 				if (targetUser.role === 'CRITIC') {
-					targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 1)
+					targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 2)
 				} else {
 					targetPage.rate = (targetPage.rate * targetPageCommentsCounts - targetComment.rate) / (targetPageCommentsCounts - 1)
 				}
@@ -161,20 +169,6 @@ exports.delete = async (req, res, next) => {
 		await normalUserModel.findByIdAndDelete(id)
 
 		return res.status(200).json({message: "User Deleted Successfully!"})
-	} catch (e) {
-		next(e)
-	}
-}
-
-exports.changeRole = async (req, res, next) => {
-	try {
-		const {id, role} = await normalUserModel.changeRoleValidation({...req.params, ...req.body})
-
-		await normalUserModel.findByIdAndUpdate(id, {
-			role
-		})
-
-		return res.status(200).json({message: "User Role Updated Successfully!"})
 	} catch (e) {
 		next(e)
 	}

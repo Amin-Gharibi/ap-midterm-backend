@@ -34,6 +34,6 @@ router
 router
 	.route('/:id')
 	.get(isAuth, controller.getOne)
-	.delete(isAuth, isAdmin, controller.delete)
+	.delete(isAuth, controller.delete)
 
 module.exports = router

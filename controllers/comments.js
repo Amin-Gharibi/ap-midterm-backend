@@ -3,6 +3,7 @@ const moviesModel = require("../models/movies")
 const articlesModel = require("../models/articles")
 const castUsersModel = require("../models/castUser")
 const normalUsersModel = require("../models/normalUser")
+const roundToNearestTenth = require("../utils/roundToNearestTenth")
 
 exports.create = async (req, res, next) => {
 	try {
@@ -25,7 +26,7 @@ exports.create = async (req, res, next) => {
 exports.approve = async (req, res, next) => {
 	try {
 		const {id} = await commentsModel.approveValidation(req.params)
-		const targetComment = await commentsModel.findById(id)
+		const targetComment = await commentsModel.findById(id).populate('user')
 		if (!targetComment) {
 			return res.status(404).json({message: "Comment Not Found!"})
 		}
@@ -40,10 +41,10 @@ exports.approve = async (req, res, next) => {
 
 			if (!page.rate) {
 				page.rate = targetComment.rate
-			} else if (req.user.role === 'CRITIC') {
-				page.rate = (page.rate + (2 * targetComment.rate)) / 2
+			} else if (targetComment.user.role === 'CRITIC') {
+				page.rate = roundToNearestTenth(((page.rate + (2 * targetComment.rate)) / 3).toFixed(2))
 			} else {
-				page.rate = (page.rate + targetComment.rate) / 2
+				page.rate = roundToNearestTenth(((page.rate + targetComment.rate) / 2).toFixed(2))
 			}
 
 			await page.save()
@@ -69,6 +70,10 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "User Not Found!"})
 		}
 
+		if (req.user.role !== 'ADMIN' && !targetUser._id.equals(req.user._id)) {
+			return res.status(403).json({message: "You Are Not Authorized!"})
+		}
+
 		const targetPage = await articlesModel.findById(targetComment.page) ||
 			await castUsersModel.findById(targetComment.page) ||
 			await moviesModel.findById(targetComment.page);
@@ -76,22 +81,25 @@ exports.delete = async (req, res, next) => {
 			return res.status(404).json({message: "Page Not Found!"})
 		}
 
-		const targetPageComments = await commentsModel.find({page: targetComment.page, parentComment: null})
+		const targetPageComments = await commentsModel.find({page: targetComment.page, isApproved: true, parentComment: null})
 		const targetPageCommentsCounts = targetPageComments.length
 
 		if (targetPageCommentsCounts <= 1) {
 			targetPage.rate = 0
 		} else {
 			if (targetUser.role === 'CRITIC') {
-				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 1)
+				if (targetPageCommentsCounts > 2) {
+					targetPage.rate = roundToNearestTenth(((targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 2)).toFixed(2))
+				} else {
+					const leftOutComment = targetPageComments.filter(comment => comment._id !== targetComment._id)
+					targetPage.rate = leftOutComment[0].rate
+				}
 			} else {
-				targetPage.rate = (targetPage.rate * targetPageCommentsCounts - targetComment.rate) / (targetPageCommentsCounts - 1)
+				targetPage.rate = roundToNearestTenth(((targetPage.rate * targetPageCommentsCounts - targetComment.rate) / (targetPageCommentsCounts - 1)).toFixed(2))
 			}
 		}
 
 		await targetPage.save()
-
-		await commentsModel.deleteMany({parentComment: targetComment._id})
 
 		await commentsModel.findByIdAndDelete(id)
 		return res.status(200).json({message: "Comment Deleted Successfully!"})

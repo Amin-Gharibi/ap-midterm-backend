@@ -24,7 +24,11 @@ const updateUserValidator = yup.object().shape({
 		.string()
 		.nullable()
 		.min(4, 'Name must be longer than 4 chars')
-		.max(36, 'Name must be shorter than 36 chars')
+		.max(36, 'Name must be shorter than 36 chars'),
+	role: yup
+		.string()
+		.nullable()
+		.oneOf(['ADMIN', 'CRITIC', 'USER'], 'Role can be one of ADMIN, CRITIC, USER')
 })
 
 const idValidator = yup.object().shape({
@@ -32,17 +36,6 @@ const idValidator = yup.object().shape({
 		.string()
 		.required("User id is required")
 		.matches(/^[0-9a-fA-F]{24}$/, "User id is not valid")
-})
-
-const changeRoleValidator = yup.object().shape({
-	id: yup
-		.string()
-		.required("User id is required")
-		.matches(/^[0-9a-fA-F]{24}$/, "User id is not valid"),
-	role: yup
-		.string()
-		.required("Must Enter New Role!")
-		.oneOf(['ADMIN', 'CRITIC', 'USER'], 'Role can be one of ADMIN, CRITIC, USER')
 })
 
 const searchValidator = yup.object().shape({
@@ -54,6 +47,5 @@ const searchValidator = yup.object().shape({
 module.exports = {
 	updateUserValidator,
 	idValidator,
-	changeRoleValidator,
 	searchValidator
 }

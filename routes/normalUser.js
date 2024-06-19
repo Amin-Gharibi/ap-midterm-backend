@@ -37,10 +37,6 @@ router
 	.put(isAuth, isAdmin, controller.unBan)
 
 router
-	.route('/role/:id')
-	.put(isAuth, isAdmin, controller.changeRole)
-
-router
 	.route('/:id')
 	.put(isAuth, multer({
 		storage: multerStorage.userProfilePicturesStorage,

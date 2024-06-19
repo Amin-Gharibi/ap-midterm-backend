@@ -55,9 +55,6 @@ normalUserSchema.statics.deleteValidation = function (body) {
 normalUserSchema.statics.getOneValidation = function (body) {
 	return idValidator.validate(body, {abortEarly: false})
 }
-normalUserSchema.statics.changeRoleValidation = function (body) {
-	return changeRoleValidator.validate(body, {abortEarly: false})
-}
 normalUserSchema.statics.banValidation = function (body) {
 	return idValidator.validate(body, {abortEarly: false})
 }
