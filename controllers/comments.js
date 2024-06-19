@@ -5,6 +5,7 @@ const castUsersModel = require("../models/castUser")
 const normalUsersModel = require("../models/normalUser")
 const roundToNearestTenth = require("../utils/roundToNearestTenth")
 const weightedMean = require("../utils/weightedMean")
+const newLiner = require("../utils/newliner")
 
 exports.create = async (req, res, next) => {
 	try {
@@ -195,7 +196,11 @@ exports.getOne = async (req, res, next) => {
 
 exports.getWaitListComments = async (req, res, next) => {
 	try {
-		const waitListComments = await commentsModel.find({isApproved: false}).populate('user page', '-password')
+		const waitListComments = await commentsModel.find({isApproved: false}).populate('user page', '-password').lean();
+
+		for (const comment of waitListComments) {
+			comment.body = newLiner(comment.body, 60)
+		}
 
 		return res.status(200).json({message: "Wait list comments received successfully!", waitListComments})
 	} catch (e) {
@@ -225,6 +230,7 @@ exports.getPageComments = async (req, res, next) => {
 				isApproved: true,
 				parentComment: comment._id
 			}).populate('user', '-password').lean()
+			comment.body = newLiner(comment.body, 150)
 		}
 
 		return res.status(200).json({message: "Page Comments Received Successfully!", pageComments})
@@ -251,6 +257,7 @@ exports.getMyComments = async (req, res, next) => {
 				isApproved: true,
 				parentComment: comment._id
 			}).populate('user', '-password').limit(2).lean();
+			comment.body = newLiner(comment.body, 150)
 		}
 
 		return res.status(200).json({message: "My Comments Received Successfully!", userComments})
