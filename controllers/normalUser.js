@@ -10,6 +10,9 @@ const favoriteArticlesModel = require("../models/favoriteArticles")
 const favoriteMoviesModel = require("../models/favoriteMovies")
 const castUserModel = require("../models/castUser")
 const moviesModel = require("../models/movies")
+const roundToNearestTenth = require("../utils/roundToNearestTenth");
+const weightedMean = require("../utils/weightedMean");
+const castUsersModel = require("../models/castUser");
 
 
 const approveEmailSubject = 'Congratulations! You Are Now In IMDB M.M.'
@@ -59,6 +62,27 @@ exports.update = async (req, res, next) => {
 			return res.status(404).json({message: "User Not Found!"})
 		}
 
+		if (role && role !== targetUser.role) {
+			await normalUserModel.findByIdAndUpdate(id, {
+				role: role
+			})
+			const userComments = await commentsModel.find({user: id, isApproved: true, parentComment: null}).lean();
+			for (const comment of userComments) {
+				console.log(comment)
+				const pageComments = await commentsModel.find({page: comment.page, isApproved: true, parentComment: null}).populate('user').lean();
+				const ratesAndWeights = pageComments.map(comment => {
+					if (comment.user.role === 'CRITIC') {
+						return [comment.rate, 2]
+					} else {
+						return [comment.rate, 1]
+					}
+				})
+				const page = (await moviesModel.findById(comment.page)) || (await articlesModel.findById(comment.page)) || (await castUsersModel.findById(comment.page))
+				page.rate = roundToNearestTenth(weightedMean(ratesAndWeights).toFixed(2))
+				await page.save()
+			}
+		}
+
 		if (profilePic && targetUser.profilePic !== 'default_prof_pic.png') {
 			await fs.unlink(path.join(__dirname, "../public/usersProfilePictures", targetUser.profilePic), err => {
 				if (err) console.log(err)
@@ -69,8 +93,7 @@ exports.update = async (req, res, next) => {
 			email: email ?? undefined,
 			username: username ?? undefined,
 			fullName: fullName ?? undefined,
-			profilePic: profilePic ?? undefined,
-			role: role ?? undefined
+			profilePic: profilePic ?? undefined
 		}, {new: true}).select('-password')
 
 		if ((currentPassword && updatingPassword) || (req.user.role === 'ADMIN' && updatingPassword)) {

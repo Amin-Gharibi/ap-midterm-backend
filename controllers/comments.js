@@ -8,7 +8,7 @@ const weightedMean = require("../utils/weightedMean")
 
 exports.create = async (req, res, next) => {
 	try {
-		const body = await commentsModel.createValidation(req.body)
+		const {rate, ...body} = await commentsModel.createValidation(req.body)
 
 		const isPageAvailable = (await moviesModel.findById(body.page)) || (await articlesModel.findById(body.page)) || (await castUsersModel.findById(body.page));
 
@@ -16,7 +16,7 @@ exports.create = async (req, res, next) => {
 			return res.status(404).json({message: "Page Not Found!"})
 		}
 
-		const createdComment = await commentsModel.create({...body, user: req.user._id})
+		const createdComment = await commentsModel.create({...body, rate: rate ?? 0, user: req.user._id})
 
 		return res.status(201).json({message: "Comment Created Successfully!", createdComment})
 	} catch (e) {
