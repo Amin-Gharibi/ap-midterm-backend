@@ -4,6 +4,7 @@ const articlesModel = require("../models/articles")
 const castUsersModel = require("../models/castUser")
 const normalUsersModel = require("../models/normalUser")
 const roundToNearestTenth = require("../utils/roundToNearestTenth")
+const weightedMean = require("../utils/weightedMean")
 
 exports.create = async (req, res, next) => {
 	try {
@@ -31,7 +32,9 @@ exports.approve = async (req, res, next) => {
 			return res.status(404).json({message: "Comment Not Found!"})
 		}
 
-		// if it has a parent then it's a reply and its rate is 0 by default
+		const updatedComment = await commentsModel.findByIdAndUpdate(id, {isApproved: true}, {new: true})
+
+		// if it has a parent then it's a reply and its rate is 0 by default and doesn't effect page rating
 		if (!targetComment.parentComment) {
 			const page = (await moviesModel.findById(targetComment.page)) || (await articlesModel.findById(targetComment.page)) || (await castUsersModel.findById(targetComment.page))
 
@@ -39,18 +42,19 @@ exports.approve = async (req, res, next) => {
 				return res.status(404).json({message: "No Page Found!"})
 			}
 
-			if (!page.rate) {
-				page.rate = targetComment.rate
-			} else if (targetComment.user.role === 'CRITIC') {
-				page.rate = roundToNearestTenth(((page.rate + (2 * targetComment.rate)) / 3).toFixed(2))
-			} else {
-				page.rate = roundToNearestTenth(((page.rate + targetComment.rate) / 2).toFixed(2))
-			}
+			const pageComments = await commentsModel.find({page: targetComment.page, isApproved: true, parentComment: null}).populate('user').lean()
+			const ratesAndWeights = pageComments.map(comment => {
+				if (comment.user.role === 'CRITIC') {
+					return [comment.rate, 2]
+				} else {
+					return [comment.rate, 1]
+				}
+			})
 
+			page.rate = roundToNearestTenth(weightedMean(ratesAndWeights).toFixed(2))
 			await page.save()
 		}
 
-		const updatedComment = await commentsModel.findByIdAndUpdate(id, {isApproved: true}, {new: true})
 		return res.status(201).json({message: "Comment Approved Successfully!", updatedComment})
 	} catch (e) {
 		next(e)
@@ -77,31 +81,27 @@ exports.delete = async (req, res, next) => {
 		const targetPage = await articlesModel.findById(targetComment.page) ||
 			await castUsersModel.findById(targetComment.page) ||
 			await moviesModel.findById(targetComment.page);
+
 		if (!targetPage) {
 			return res.status(404).json({message: "Page Not Found!"})
 		}
 
-		const targetPageComments = await commentsModel.find({page: targetComment.page, isApproved: true, parentComment: null})
-		const targetPageCommentsCounts = targetPageComments.length
+		await commentsModel.findByIdAndDelete(id)
 
-		if (targetPageCommentsCounts <= 1) {
-			targetPage.rate = 0
-		} else {
-			if (targetUser.role === 'CRITIC') {
-				if (targetPageCommentsCounts > 2) {
-					targetPage.rate = roundToNearestTenth(((targetPage.rate * targetPageCommentsCounts - (2 * targetComment.rate)) / (targetPageCommentsCounts - 2)).toFixed(2))
-				} else {
-					const leftOutComment = targetPageComments.filter(comment => comment._id !== targetComment._id)
-					targetPage.rate = leftOutComment[0].rate
-				}
+		const targetPageComments = await commentsModel.find({page: targetComment.page, isApproved: true, parentComment: null}).populate('user').lean()
+
+		const ratesAndWeights = targetPageComments.map(comment => {
+			if (comment.user.role === 'CRITIC') {
+				return [comment.rate, 2]
 			} else {
-				targetPage.rate = roundToNearestTenth(((targetPage.rate * targetPageCommentsCounts - targetComment.rate) / (targetPageCommentsCounts - 1)).toFixed(2))
+				return [comment.rate, 1]
 			}
-		}
+		})
+
+		targetPage.rate = roundToNearestTenth(weightedMean(ratesAndWeights).toFixed(2))
 
 		await targetPage.save()
 
-		await commentsModel.findByIdAndDelete(id)
 		return res.status(200).json({message: "Comment Deleted Successfully!"})
 	} catch (e) {
 		next(e);
