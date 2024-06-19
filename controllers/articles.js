@@ -34,10 +34,10 @@ exports.update = async (req, res, next) => {
 			return res.status(404).json({message: "Article Not Found!"})
 		}
 
-		const cover = req.files.cover[0]?.filename ?? undefined
+		const cover = req.files?.cover[0]?.filename ?? undefined
 
-		if (cover !== targetArticle.cover) {
-			fs.unlink(path.join(__dirname, '../public/articlesCovers', cover), err => {
+		if (cover && cover !== targetArticle.cover) {
+			fs.unlink(path.join(__dirname, '../public/articlesCovers', targetArticle.cover), err => {
 				if (err) console.log(err)
 			})
 		}
