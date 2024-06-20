@@ -65,7 +65,11 @@ const publishValidator = yup.object().shape({
 
 const searchValidator = yup.object().shape({
 	q: yup
+		.string(),
+	filter: yup
 		.string()
+		.nullable()
+		.oneOf(['LATEST', 'TOPRATED', 'LOWRATED'], 'Available filters are LATEST, TOPRATED, LOWRATED')
 })
 
 module.exports = {

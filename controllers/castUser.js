@@ -143,16 +143,34 @@ exports.getOne = async (req, res, next) => {
 
 exports.searchHandler = async (req, res, next) => {
 	try {
-		const {q} = await castUserModel.searchValidation(req.query)
+		const {q, filter} = await castUserModel.searchValidation(req.query)
 
 		let targetCasts = null
 
+		let sortCriteria = {}
+		switch (filter) {
+			case 'LATEST':
+				sortCriteria = {createdAt: -1}
+				break
+			case 'TOPRATED':
+				sortCriteria = {rate: -1}
+				break
+			case 'LOWRATED':
+				sortCriteria = {rate: 1}
+				break
+			default:
+				sortCriteria = {createdAt: 1, rate: 1}
+		}
 
 		targetCasts = await castUserModel.find({
 			$or: [
 				{fullName: {$regex: q, $options: 'i'}}
 			]
-		})
+		}).sort(sortCriteria).lean()
+
+		for (const cast of targetCasts) {
+			cast.biography = newLiner(cast.biography.slice(0, 200), 40)
+		}
 
 		return res.status(200).json({message: "Search Result Found!", result: targetCasts})
 	} catch (e) {

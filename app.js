@@ -13,6 +13,7 @@ const articlesRoutes = require("./routes/articles");
 const commentRoutes = require("./routes/comments");
 const normalUsersRoutes = require("./routes/normalUser");
 const favoritesRoutes = require("./routes/favorites");
+const universalSearchRoute = require("./routes/universalSearch");
 
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api/article", articlesRoutes)
 app.use("/api/comment", commentRoutes)
 app.use("/api/user", normalUsersRoutes)
 app.use("/api/favorite", favoritesRoutes)
+app.use("/api/universalsearch", universalSearchRoute)
 
 
 //* Error Controller

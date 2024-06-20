@@ -130,6 +130,10 @@ exports.getAll = async (req, res, next) => {
 	try {
 		const allMovies = await moviesModel.find().lean()
 
+		for (const movie of allMovies) {
+			movie.summary = newLiner(movie.summary.slice(0, 200) + '...', 40)
+		}
+
 		return res.status(200).json({message: "All movies received successfully", allMovies})
 	} catch (e) {
 		next(e)
@@ -144,7 +148,10 @@ exports.getOne = async (req, res, next) => {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 
-		const movieComments = await commentsModel.find({page: targetMovie._id, isApproved: true}).populate('user', '-password')
+		const movieComments = await commentsModel.find({
+			page: targetMovie._id,
+			isApproved: true
+		}).populate('user', '-password')
 
 		targetMovie.summary = newLiner(targetMovie.summary, 150)
 		targetMovie.comments = movieComments
@@ -194,7 +201,7 @@ exports.getAllApproved = async (req, res, next) => {
 
 exports.searchHandler = async (req, res, next) => {
 	try {
-		const {q} = await moviesModel.searchValidation(req.query)
+		const {q, filter} = await moviesModel.searchValidation(req.query)
 
 		const authorizationHeader = req.header("Authorization")?.split(" ");
 		let user = null
@@ -209,21 +216,40 @@ exports.searchHandler = async (req, res, next) => {
 
 		let targetMovies = null
 
+		let sortCriteria = {}
+		switch (filter) {
+			case 'LATEST':
+				sortCriteria = {createdAt: -1}
+				break
+			case 'TOPRATED':
+				sortCriteria = {rate: -1}
+				break
+			case 'LOWRATED':
+				sortCriteria = {rate: 1}
+				break
+			default:
+				sortCriteria = {createdAt: 1, rate: 1}
+		}
+
 		if (user?.role === 'ADMIN') {
 			targetMovies = await moviesModel.find({
 				$or: [
-					{ fullName: { $regex: q, $options: 'i' } },
-					{ summary: { $regex: q, $options: 'i' } }
+					{fullName: {$regex: q, $options: 'i'}},
+					{summary: {$regex: q, $options: 'i'}}
 				]
-			})
+			}).sort(sortCriteria).lean()
 		} else {
 			targetMovies = await moviesModel.find({
 				$or: [
-					{ fullName: { $regex: q, $options: 'i' } },
-					{ summary: { $regex: q, $options: 'i' } }
+					{fullName: {$regex: q, $options: 'i'}},
+					{summary: {$regex: q, $options: 'i'}}
 				],
 				isPublished: true
-			})
+			}).sort(sortCriteria).lean()
+		}
+
+		for (const movie of targetMovies) {
+			movie.summary = newLiner(movie.summary.slice(0, 200), 40)
 		}
 
 		return res.status(200).json({message: "Search Result Found!", result: targetMovies})
@@ -260,13 +286,20 @@ exports.getRandomGenreTopList = async (req, res, next) => {
 
 		const randomGenre = genres[Math.floor(Math.random() * genres.length)]
 
-		const genreTopRatedMovies = await moviesModel.find({isPublished: true, genre: randomGenre}).sort({rate: -1}).limit(9).lean();
+		const genreTopRatedMovies = await moviesModel.find({
+			isPublished: true,
+			genre: randomGenre
+		}).sort({rate: -1}).limit(9).lean();
 
 		for (const movie of genreTopRatedMovies) {
 			movie.summary = newLiner(movie.summary.slice(0, 200), 40)
 		}
 
-		return res.status(200).json({message: "Random Genre Top Rated Movies Found!", genre: randomGenre, topMovies: genreTopRatedMovies})
+		return res.status(200).json({
+			message: "Random Genre Top Rated Movies Found!",
+			genre: randomGenre,
+			topMovies: genreTopRatedMovies
+		})
 	} catch (e) {
 		next(e)
 	}
