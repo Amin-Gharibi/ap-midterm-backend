@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const commentsModel = require("../models/comments")
 const favoriteMoviesModel = require("../models/favoriteMovies")
 const newLiner = require("../utils/newliner")
+const jwt = require("jsonwebtoken");
+const normalUserModel = require("../models/normalUser");
 
 
 exports.create = async (req, res, next) => {
@@ -194,9 +196,20 @@ exports.searchHandler = async (req, res, next) => {
 	try {
 		const {q} = await moviesModel.searchValidation(req.query)
 
+		const authorizationHeader = req.header("Authorization")?.split(" ");
+		let user = null
+
+		if (authorizationHeader?.length === 2) {
+			const token = authorizationHeader[1];
+
+			const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+			user = await normalUserModel.findById(decoded.id).lean();
+		}
+
 		let targetMovies = null
 
-		if (req.user?.role === 'ADMIN') {
+		if (user?.role === 'ADMIN') {
 			targetMovies = await moviesModel.find({
 				$or: [
 					{ fullName: { $regex: q, $options: 'i' } },

@@ -37,7 +37,7 @@ router
 
 router
 	.route('/search')
-	.get(isAuth, controller.searchHandler)
+	.get(controller.searchHandler)
 
 router
 	.route('/:id')
