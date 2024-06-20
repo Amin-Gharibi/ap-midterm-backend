@@ -41,7 +41,7 @@ exports.universalSearch = async (req, res, next) => {
 		}).limit(6).lean()
 
 		for (const cast of castUsers) {
-			cast.biography = newLiner(cast.body.slice(0, 200) + '...', 50)
+			cast.biography = newLiner(cast.biography.slice(0, 200) + '...', 50)
 		}
 
 		return res.status(200).json({message: "Universal Search Successful!", articles, movies, castUsers})
