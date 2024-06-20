@@ -22,7 +22,6 @@ const createValidator = yup.object().shape({
 				.required("Entering in-movie role of each cast is required"),
 			inMovieName: yup
 				.string()
-				.required("Entering in-movie name of each cast is required")
 		})),
 	genre: yup
 		.string()

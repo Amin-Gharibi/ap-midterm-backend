@@ -11,8 +11,8 @@ const newLiner = require("../utils/newliner")
 exports.create = async (req, res, next) => {
 	try {
 		let {genre, ...body} = await moviesModel.createValidation(req.body)
-		const medias = req.files.medias?.map(media => media.filename) ?? undefined
-		const cover = req.files.cover[0]?.filename ?? undefined
+		const medias = req.files?.medias?.map(media => media.filename) ?? undefined
+		const cover = req.files?.cover[0]?.filename ?? undefined
 
 		for (const cast of body.cast) {
 			const isExist = await castModel.findById(new mongoose.Types.ObjectId(cast.castId))
@@ -54,19 +54,19 @@ exports.update = async (req, res, next) => {
 			return res.status(404).json({message: "Movie Not Found!"})
 		}
 
-		const medias = req.files.medias?.map(media => media.filename) ?? undefined;
-		const cover = req.files.cover[0]?.filename ?? undefined
+		const medias = req.files?.medias?.map(media => media.filename) ?? undefined;
+		const cover = req.files?.cover[0]?.filename ?? undefined
 
-		if (medias !== targetMovie.medias) {
-			medias.forEach(media => {
+		if (medias?.length) {
+			targetMovie.medias.forEach(media => {
 				fs.unlink(path.join(__dirname, '../public/moviesPictures', media), err => {
 					if (err) console.log(err)
 				})
 			})
 		}
 
-		if (cover !== targetMovie.cover) {
-			fs.unlink(path.join(__dirname, '../public/moviesPictures', cover), err => {
+		if (cover && cover !== targetMovie.cover && targetMovie.cover !== 'default_prof_pic.png') {
+			fs.unlink(path.join(__dirname, '../public/moviesPictures', targetMovie.cover), err => {
 				if (err) console.log(err)
 			})
 		}
