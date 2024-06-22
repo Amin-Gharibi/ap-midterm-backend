@@ -11,8 +11,7 @@ exports.getAll = async (req, res, next) => {
 		})
 
 		for (const favoriteMovie of allFavoriteMovies) {
-			favoriteMovie.movie.summary = newLiner(favoriteMovie.movie.summary, 50)
-			favoriteMovie.movie.summary = favoriteMovie.movie.summary.slice(0, 100) + '...'
+			favoriteMovie.movie.summary = newLiner(favoriteMovie.movie.summary.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({message: "All Favorite Movies Found!", allFavoriteMovies})

@@ -230,7 +230,7 @@ exports.getPageComments = async (req, res, next) => {
 				isApproved: true,
 				parentComment: comment._id
 			}).populate('user', '-password').lean()
-			comment.body = newLiner(comment.body, 150)
+			comment.body = newLiner(comment.body, 200)
 		}
 
 		return res.status(200).json({message: "Page Comments Received Successfully!", pageComments})
@@ -257,7 +257,7 @@ exports.getMyComments = async (req, res, next) => {
 				isApproved: true,
 				parentComment: comment._id
 			}).populate('user', '-password').limit(2).lean();
-			comment.body = newLiner(comment.body, 150)
+			comment.body = newLiner(comment.body, 200)
 		}
 
 		return res.status(200).json({message: "My Comments Received Successfully!", userComments})

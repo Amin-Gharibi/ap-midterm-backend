@@ -119,6 +119,10 @@ exports.getAll = async (req, res, next) => {
 	try {
 		const allCast = await castUserModel.find().lean()
 
+		for (const cast of allCast) {
+			cast.biography = newLiner(cast.biography.slice(0, 200) + '...', 40)
+		}
+
 		return res.status(200).json({message: "All cast received successfully", allCast})
 	} catch (e) {
 		next(e)
@@ -169,7 +173,7 @@ exports.searchHandler = async (req, res, next) => {
 		}).sort(sortCriteria).lean()
 
 		for (const cast of targetCasts) {
-			cast.biography = newLiner(cast.biography.slice(0, 200), 40)
+			cast.biography = newLiner(cast.biography.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({message: "Search Result Found!", result: targetCasts})
@@ -180,10 +184,10 @@ exports.searchHandler = async (req, res, next) => {
 
 exports.getTopRated = async (req, res, next) => {
 	try {
-		const topRated = await castUserModel.find().sort({rate: -1}).limit(3).lean()
+		const topRated = await castUserModel.find().sort({rate: -1}).limit(4).lean()
 
 		for (const cast of topRated) {
-			cast.biography = newLiner(cast.biography.slice(0, 200), 50)
+			cast.biography = newLiner(cast.biography.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({message: "Top Rated Artists Found!", topRated})
@@ -202,6 +206,10 @@ exports.getCastMovies = async (req, res, next) => {
 				isPublished: true
 			}
 		)
+
+		for (const movie of castMovies) {
+			movie.summary = newLiner(movie.summary.slice(0, 200) + '...', 40)
+		}
 
 		return res.status(200).json({message: "Cast Movies Received Successfully!", castMovies})
 	} catch (e) {

@@ -11,8 +11,7 @@ exports.getAll = async (req, res, next) => {
 		})
 
 		for (const favoriteArticle of allFavoriteArticles) {
-			favoriteArticle.article.body = newLiner(favoriteArticle.article.body, 50)
-			favoriteArticle.article.body = favoriteArticle.article.body.slice(0, 100) + '...'
+			favoriteArticle.article.body = newLiner(favoriteArticle.article.body.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({message: "All Favorite Articles Found!", allFavoriteArticles})

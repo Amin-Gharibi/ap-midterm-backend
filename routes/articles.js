@@ -24,7 +24,7 @@ router
 
 router
 	.route('/me')
-	.get(isAuth, controller.getMyComments)
+	.get(isAuth, controller.getMyArticles)
 
 router
 	.route('/status/:id')

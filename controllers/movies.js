@@ -16,7 +16,7 @@ exports.create = async (req, res, next) => {
 		const medias = req.files?.medias?.map(media => media.filename) ?? undefined
 		const cover = req.files?.cover[0]?.filename ?? undefined
 
-		for (const cast of body.cast) {
+		for (const cast of Array.from(body.cast || [])) {
 			const isExist = await castModel.findById(new mongoose.Types.ObjectId(cast.castId))
 			if (!isExist) {
 				return res.status(400).json({message: "Cast Not Found!"})
@@ -36,18 +36,6 @@ exports.create = async (req, res, next) => {
 		if (e.code && e.code === 11000) {
 			return res.status(400).json({message: "A movie with this name already exists. Please choose a different name."});
 		}
-		const medias = targetMovie.medias.map(media => media) ?? undefined;
-		const cover = targetMovie.cover ?? undefined;
-
-		medias.forEach(media => {
-			media && fs.unlink(path.join(__dirname, '../public/moviesPictures', media), err => {
-				if (err) console.log(err)
-			})
-		})
-
-		cover && fs.unlink(path.join(__dirname, '../public/moviesPictures', cover), err => {
-			if (err) console.log(err)
-		})
 		next(e)
 	}
 }
@@ -171,13 +159,13 @@ exports.getOne = async (req, res, next) => {
 			isApproved: true
 		}).populate('user', '-password')
 
-		targetMovie.summary = newLiner(targetMovie.summary, 150)
+		targetMovie.summary = newLiner(targetMovie.summary, 200)
 		targetMovie.comments = movieComments
 
 		for (const cast of targetMovie.cast) {
 			cast.cast = cast.castId
 			delete cast.castId
-			cast.cast.biography = newLiner(cast.cast.biography.slice(0, 200), 40)
+			cast.cast.biography = newLiner(cast.cast.biography.slice(0, 200) + '...', 40)
 		}
 
 		targetMovie.isMovieInFavorites = await favoriteMoviesModel.findOne({movie: targetMovie._id})
@@ -266,8 +254,8 @@ exports.searchHandler = async (req, res, next) => {
 			}).sort(sortCriteria).lean()
 		}
 
-		for (const movie of targetMovies) {
-			movie.summary = newLiner(movie.summary.slice(0, 200), 40)
+		for (const movie of latestMovies) {
+			movie.summary = newLiner(movie.summary.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({message: "Search Result Found!", result: targetMovies})
@@ -278,10 +266,10 @@ exports.searchHandler = async (req, res, next) => {
 
 exports.getLatest = async (req, res, next) => {
 	try {
-		const latestMovies = await moviesModel.find({isPublished: true}).sort({createdAt: -1}).limit(9).lean();
+		const latestMovies = await moviesModel.find({isPublished: true}).sort({createdAt: -1}).limit(8).lean();
 
 		for (const movie of latestMovies) {
-			movie.summary = newLiner(movie.summary, 30)
+			movie.summary = newLiner(movie.summary.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({message: "Latest Movies Received Successfully!", latestMovies})
@@ -310,7 +298,7 @@ exports.getRandomGenreTopList = async (req, res, next) => {
 		}).sort({rate: -1}).limit(9).lean();
 
 		for (const movie of genreTopRatedMovies) {
-			movie.summary = newLiner(movie.summary.slice(0, 200), 40)
+			movie.summary = newLiner(movie.summary.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({

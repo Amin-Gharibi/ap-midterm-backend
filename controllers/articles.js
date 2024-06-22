@@ -103,7 +103,7 @@ exports.getOne = async (req, res, next) => {
 			return res.status(404).json({message: "Article Not Found!"})
 		}
 
-		targetArticle.body = newLiner(targetArticle.body, 150)
+		targetArticle.body = newLiner(targetArticle.body, 205)
 
 		targetArticle.isArticleInFavorites = await favoriteArticlesModel.findOne({article: targetArticle._id})
 
@@ -138,6 +138,10 @@ exports.changeStatus = async (req, res, next) => {
 exports.getAllPublished = async (req, res, next) => {
 	try {
 		const publishedArticles = await articlesModel.find({isPublished: true})
+
+		for (const article of publishedArticles) {
+			article.body = newLiner(article.body.slice(0, 200) + '...', 40)
+		}
 
 		return res.status(200).json({message: "Published Articles Found Successfully!", publishedArticles})
 	} catch (e) {
@@ -195,7 +199,7 @@ exports.searchHandler = async (req, res, next) => {
 		}
 
 		for (const article of targetArticles) {
-			article.body = newLiner(article.body.slice(0, 200), 40)
+			article.body = newLiner(article.body.slice(0, 200) + '...', 40)
 		}
 
 		return res.status(200).json({message: "Search Result Found!", result: targetArticles})
@@ -204,7 +208,7 @@ exports.searchHandler = async (req, res, next) => {
 	}
 }
 
-exports.getMyComments = async (req, res, next) => {
+exports.getMyArticles = async (req, res, next) => {
 	try {
 		const userArticles = await articlesModel.find({writer: req.user._id})
 

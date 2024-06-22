@@ -9,7 +9,7 @@ const createUserValidator = yup.object().shape({
 	biography: yup
 		.string()
 		.min(10, 'Min character count for biography is 10')
-		.max(150, 'Max character count for biography is 150')
+		.max(1500, 'Max character count for biography is 1500')
 		.required("Entering biography is required!"),
 	birthDate: yup
 		.string()
