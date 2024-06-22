@@ -33,6 +33,21 @@ exports.create = async (req, res, next) => {
 		})
 		return res.status(201).json({message: "Movie created successfully", createdMovie})
 	} catch (e) {
+		if (e.code && e.code === 11000) {
+			return res.status(400).json({message: "A movie with this name already exists. Please choose a different name."});
+		}
+		const medias = targetMovie.medias.map(media => media) ?? undefined;
+		const cover = targetMovie.cover ?? undefined;
+
+		medias.forEach(media => {
+			media && fs.unlink(path.join(__dirname, '../public/moviesPictures', media), err => {
+				if (err) console.log(err)
+			})
+		})
+
+		cover && fs.unlink(path.join(__dirname, '../public/moviesPictures', cover), err => {
+			if (err) console.log(err)
+		})
 		next(e)
 	}
 }
@@ -90,6 +105,9 @@ exports.update = async (req, res, next) => {
 
 		return res.status(201).json({message: "Movie updated successfully", updatedMovie})
 	} catch (e) {
+		if (e.code && e.code === 11000) {
+			return res.status(400).json({message: "A movie with this name already exists. Please choose a different name."});
+		}
 		next(e)
 	}
 }

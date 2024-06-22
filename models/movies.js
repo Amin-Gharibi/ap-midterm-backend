@@ -22,7 +22,8 @@ const castUserSchema = new mongoose.Schema({
 
 const moviesSchema = new mongoose.Schema({
 	fullName: {
-		type: String
+		type: String,
+		unique: true
 	},
 	summary: {
 		type: String
